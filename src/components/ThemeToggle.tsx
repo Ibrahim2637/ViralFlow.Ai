@@ -32,9 +32,9 @@ export default function ThemeToggle() {
         justifyContent: 'center',
         padding: '8px',
         borderRadius: 'var(--radius-sm)',
-        backgroundColor: 'var(--bg-surface)',
+        backgroundColor: 'var(--accent-primary)',
         border: '1px solid var(--border-color)',
-        color: 'var(--text-primary)',
+        color: '#ffffff',
         cursor: 'pointer',
         transition: 'background-color var(--transition-fast), border-color var(--transition-fast)',
       }}

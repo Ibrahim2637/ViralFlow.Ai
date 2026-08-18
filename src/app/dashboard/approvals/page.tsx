@@ -305,7 +305,7 @@ export default function ApprovalsPage() {
                 <button
                   onClick={() => submitApproval('schedule')}
                   disabled={!scheduleTime}
-                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem', opacity: scheduleTime ? 1 : 0.6 }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--accent-primary)', border: '1px solid var(--border-color)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem', opacity: scheduleTime ? 1 : 0.6 }}
                 >
                   Schedule
                 </button>
