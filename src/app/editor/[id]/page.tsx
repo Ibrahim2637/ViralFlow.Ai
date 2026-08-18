@@ -355,7 +355,7 @@ export default function ScriptStudio() {
                   )}
 
                   {s.type === 'creator' && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', italic: 'true' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                       ⚡ Visual: Creator Authorized portrait/talking-head footage overlay.
                     </div>
                   )}

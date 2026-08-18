@@ -119,7 +119,7 @@ export default function ApprovalsPage() {
       </div>
 
       {activeDraft ? (
-        <div className="glass-panel" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }} className="approval-pane">
+        <div className="glass-panel approval-pane" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
           {/* 9:16 vertical player mockup */}
           <div style={{
             width: '100%',
