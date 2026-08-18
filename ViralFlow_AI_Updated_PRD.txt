@@ -1,0 +1,1702 @@
+ViralFlow AI — Updated Product Requirements Document (PRD)
+
+Autonomous AI Content Discovery, Creation, Editing, Publishing & Learning Platform
+
+Hackathon: Separate / non-Alibaba hackathon
+Category: Open Innovation
+Primary automation: n8n + low-code/no-code
+Development: Claude + Antigravity + OmniRoute
+Alibaba dependency: None
+
+------------------------------------------------------------------------
+
+1. Executive Summary
+
+ViralFlow AI is an autonomous content-operations platform for creators.
+
+Instead of being only an AI script writer or AI video generator,
+ViralFlow continuously:
+
+Finds opportunities → analyzes them → decides what the creator should
+make → writes the content → gathers/generates media → edits the video →
+publishes it → measures performance → learns what worked.
+
+The goal is to give an individual creator an AI content team consisting
+of:
+
+-   Trend researcher
+-   Content strategist
+-   Scriptwriter
+-   Fact checker
+-   Producer
+-   Video editor
+-   Publisher
+-   Performance analyst
+
+The main differentiator is the closed feedback loop.
+
+  Discover → Analyze → Decide → Create → Edit → Publish → Measure →
+  Learn
+
+------------------------------------------------------------------------
+
+2. Problem
+
+Creators spend significant time on:
+
+-   Finding trends
+-   Understanding why a topic is becoming popular
+-   Deciding whether a trend fits their audience
+-   Writing hooks and scripts
+-   Finding B-roll
+-   Recording voice/avatar footage
+-   Editing
+-   Adding captions
+-   Publishing
+-   Checking analytics
+-   Deciding what to make next
+
+Most existing AI tools automate only one or two of these steps.
+
+ViralFlow aims to connect the entire process.
+
+------------------------------------------------------------------------
+
+3. Product Vision
+
+Build an always-on AI content operator that can take a creator profile
+and continuously produce relevant short-form content opportunities,
+prepare videos, publish them with authorization, and learn from
+performance.
+
+------------------------------------------------------------------------
+
+4. Core Product Loop
+
+    Creator Profile
+          ↓
+    Trend Discovery
+          ↓
+    Trend Analysis
+          ↓
+    Opportunity Scoring
+          ↓
+    Creator-Fit Decision
+          ↓
+    Content Strategy
+          ↓
+    Script + Hook
+          ↓
+    Fact / Quality Check
+          ↓
+    Scene Planning
+          ↓
+    Media Retrieval / Generation
+          ↓
+    Voice / Avatar
+          ↓
+    Video Rendering
+          ↓
+    Quality Check
+          ↓
+    Human Approval
+          ↓
+    Publish / Schedule
+          ↓
+    Analytics
+          ↓
+    Performance Analysis
+          ↓
+    Creator DNA Update
+          ↓
+    Next Content Decision
+
+------------------------------------------------------------------------
+
+5. Goals
+
+P0 Goals
+
+1.  Automate trend discovery.
+2.  Score trends based on momentum and creator fit.
+3.  Create original content angles.
+4.  Generate scripts and structured scene plans.
+5.  Retrieve stock media.
+6.  Generate selected AI visual scenes when useful.
+7.  Produce voice/captions.
+8.  Automatically assemble vertical videos.
+9.  Publish or prepare videos for publishing.
+10. Collect analytics.
+11. Learn from results.
+
+Non-Goals
+
+-   Guaranteeing virality.
+-   Training a foundation video model.
+-   Building a professional Premiere Pro replacement.
+-   Scraping every social platform.
+-   Publishing without user authorization.
+-   Reproducing another creator’s content.
+
+------------------------------------------------------------------------
+
+6. Creator DNA
+
+Creator DNA is a structured profile describing how a creator normally
+produces content.
+
+It should contain:
+
+-   Niche
+-   Target audience
+-   Country/market
+-   Language
+-   Tone
+-   Vocabulary
+-   Average video length
+-   Preferred hook types
+-   Preferred topics
+-   Topics to avoid
+-   Visual style
+-   Caption style
+-   Brand rules
+-   CTA style
+-   Historical successful topics
+-   Historical successful hooks
+-   Historical performance patterns
+
+Example:
+
+    {
+      "niche": "AI and technology",
+      "audience": "Pakistani university students",
+      "language": "English",
+      "tone": ["fast", "educational", "direct"],
+      "duration": "30-60 seconds",
+      "hook_style": ["question", "surprising fact"],
+      "cta_style": "short",
+      "avoid": ["political controversy"]
+    }
+
+Creator DNA should be versioned so the system can learn over time.
+
+------------------------------------------------------------------------
+
+7. Main System Architecture
+
+High-Level Architecture
+
+                        ┌─────────────────────┐
+                        │   Creator Dashboard │
+                        └──────────┬──────────┘
+                                   │
+                                   ▼
+                        ┌─────────────────────┐
+                        │    n8n Orchestrator │
+                        └──────────┬──────────┘
+                                   │
+           ┌───────────────────────┼────────────────────────┐
+           │                       │                        │
+           ▼                       ▼                        ▼
+     Trend Sources            AI/LLM Layer            Media Layer
+     YouTube API              OmniRoute               Pexels
+     RSS/Public APIs          Strategy Agent          AI Video
+                              Script Agent            TTS
+                              Fact Checker            Avatar
+           │                       │                        │
+           └───────────────────────┼────────────────────────┘
+                                   ▼
+                           Video Render Worker
+                             FFmpeg / Remotion
+                                   │
+                                   ▼
+                             Storage Layer
+                           Supabase / R2
+                                   │
+                                   ▼
+                           Publishing APIs
+                        YouTube / TikTok etc.
+                                   │
+                                   ▼
+                               Analytics
+                                   │
+                                   ▼
+                             Learning Agent
+                                   │
+                                   ▼
+                              Creator DNA
+
+------------------------------------------------------------------------
+
+8. IMPORTANT: How Everything Connects Through n8n
+
+n8n is the central orchestration layer.
+
+Do not make every service directly communicate with every other service.
+
+Instead:
+
+    Service A
+        ↓
+    n8n
+        ↓
+    Service B
+        ↓
+    n8n
+        ↓
+    Service C
+
+This makes the architecture easier to debug and replace.
+
+n8n’s HTTP Request node can call REST APIs and supports predefined or
+generic authentication methods including API keys, headers, bearer auth
+and OAuth2.
+
+Official n8n HTTP Request documentation:
+https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/
+
+------------------------------------------------------------------------
+
+9. n8n Workflow Structure
+
+Use several smaller workflows instead of one giant workflow.
+
+Recommended workflows:
+
+1.  Creator Onboarding
+2.  Trend Scanner
+3.  Trend Analyzer
+4.  Content Factory
+5.  Media Factory
+6.  Video Renderer
+7.  Publishing
+8.  Analytics Collector
+9.  Learning Engine
+10. Error Handler
+
+Each workflow communicates through database records, webhook payloads or
+workflow-to-workflow calls.
+
+------------------------------------------------------------------------
+
+10. Workflow 1 — Creator Onboarding
+
+Trigger
+
+Frontend sends:
+
+    POST https://YOUR-N8N-DOMAIN/webhook/creator/onboard
+
+n8n Webhook node receives:
+
+    {
+      "creator_id": "123",
+      "niche": "AI",
+      "audience": "students",
+      "language": "English",
+      "tone": ["fast", "educational"]
+    }
+
+n8n nodes
+
+    Webhook
+     ↓
+    Set / Edit Fields
+     ↓
+    Supabase Insert Creator
+     ↓
+    Optional: Download creator examples
+     ↓
+    Whisper transcription
+     ↓
+    LLM Creator DNA extraction
+     ↓
+    Supabase Insert DNA
+     ↓
+    Respond to Webhook
+
+n8n Webhook nodes can accept authenticated requests and return a
+response immediately or after the workflow finishes.
+
+------------------------------------------------------------------------
+
+11. Workflow 2 — Trend Scanner
+
+Trigger
+
+Use:
+
+-   Schedule Trigger
+-   Every 15 minutes / 30 minutes / 1 hour
+
+Example:
+
+    Schedule Trigger
+           ↓
+    YouTube API
+           ↓
+    HTTP Request / RSS sources
+           ↓
+    Merge
+           ↓
+    Normalize data
+           ↓
+    Remove duplicates
+           ↓
+    Supabase
+
+YouTube API connection
+
+Use n8n’s HTTP Request node or a suitable YouTube integration.
+
+Credentials should be stored in n8n Credentials, not inside nodes as
+plain text.
+
+For APIs that do not have a native n8n node, HTTP Request can be used.
+
+------------------------------------------------------------------------
+
+12. Trend Data Structure
+
+Normalize all sources into one format:
+
+    {
+      "source": "youtube",
+      "external_id": "abc123",
+      "title": "New AI Tool Changes Coding",
+      "url": "https://...",
+      "published_at": "2026-08-17T10:00:00Z",
+      "views": 120000,
+      "likes": 8500,
+      "comments": 1200,
+      "topic": "AI coding",
+      "collected_at": "2026-08-17T11:00:00Z"
+    }
+
+This allows the rest of the system to ignore which source the trend came
+from.
+
+------------------------------------------------------------------------
+
+13. Workflow 3 — Trend Analyzer
+
+    Supabase: New Trends
+            ↓
+    Get Creator DNA
+            ↓
+    Calculate basic metrics
+            ↓
+    LLM Trend Analyzer
+            ↓
+    JSON Validator
+            ↓
+    Calculate final score
+            ↓
+    Save opportunity
+
+The LLM should return structured JSON:
+
+    {
+      "topic": "AI coding agents",
+      "creator_fit": 91,
+      "momentum": 87,
+      "novelty": 72,
+      "saturation": 44,
+      "feasibility": 95,
+      "recommended": true,
+      "reason": "Strong fit with creator audience and growing interest."
+    }
+
+------------------------------------------------------------------------
+
+14. Opportunity Score
+
+Initial formula:
+
+    25% Momentum
+    20% Audience Fit
+    15% Novelty
+    15% Engagement Quality
+    15% Timing
+    10% Production Feasibility
+
+The system should eventually learn better weights from actual
+performance.
+
+------------------------------------------------------------------------
+
+15. Workflow 4 — Content Factory
+
+Trigger:
+
+    New high-scoring opportunity
+
+Workflow:
+
+    Opportunity
+        ↓
+    Creator DNA
+        ↓
+    Strategy Agent
+        ↓
+    Hook Generator
+        ↓
+    Script Agent
+        ↓
+    Fact Checker
+        ↓
+    Scene Planner
+        ↓
+    Save Content Plan
+
+The Strategy Agent should decide:
+
+-   What angle?
+-   What hook?
+-   What format?
+-   What information?
+-   Why should the audience care?
+-   What CTA?
+
+------------------------------------------------------------------------
+
+16. Script JSON
+
+Example:
+
+    {
+      "title": "The AI Tool Students Are Missing",
+      "duration": 45,
+      "hook": "You're probably using AI the wrong way.",
+      "scenes": [
+        {
+          "start": 0,
+          "end": 4,
+          "type": "creator",
+          "text": "You're probably using AI the wrong way."
+        },
+        {
+          "start": 4,
+          "end": 10,
+          "type": "broll",
+          "search": "student using laptop AI"
+        },
+        {
+          "start": 10,
+          "end": 18,
+          "type": "ai_video",
+          "prompt": "..."
+        }
+      ],
+      "cta": "Follow for more."
+    }
+
+This JSON becomes the contract between AI and the video production
+system.
+
+------------------------------------------------------------------------
+
+17. Workflow 5 — Media Factory
+
+The Media Factory reads the scene JSON.
+
+For each scene:
+
+    IF creator footage
+        ↓
+    Get creator asset
+
+    IF stock
+        ↓
+    Pexels API
+
+    IF AI visual
+        ↓
+    AI video/image provider
+
+    IF graphic
+        ↓
+    Generate graphic
+
+    IF voice
+        ↓
+    TTS
+
+Then all assets are saved with metadata.
+
+------------------------------------------------------------------------
+
+18. Pexels Connection
+
+n8n:
+
+    HTTP Request
+        ↓
+    GET Pexels API
+        ↓
+    Search Query = scene.search
+        ↓
+    Select best result
+        ↓
+    Download asset
+        ↓
+    Store in R2/Supabase
+
+Save:
+
+    {
+      "provider": "pexels",
+      "source_url": "...",
+      "download_url": "...",
+      "license_source": "pexels",
+      "scene_id": "scene_2"
+    }
+
+Do not discard source information.
+
+------------------------------------------------------------------------
+
+19. AI Video Connection
+
+The system should use a provider abstraction:
+
+    Generate Video Scene
+            ↓
+    IF local model available
+            ↓
+    Local Wan/LTX/etc.
+
+    ELSE
+            ↓
+    Configured cloud inference API
+
+n8n HTTP Request:
+
+    POST /generate
+    Authorization: Bearer API_KEY
+
+    {
+      "prompt": "...",
+      "duration": 5,
+      "aspect_ratio": "9:16"
+    }
+
+Then:
+
+    Wait / Poll
+       ↓
+    Generation complete?
+       ↓
+    Download MP4
+       ↓
+    Store asset
+
+Do not build the entire product around one video model.
+
+------------------------------------------------------------------------
+
+20. Voice Generation
+
+Recommended MVP:
+
+    Script
+      ↓
+    TTS
+      ↓
+    MP3/WAV
+      ↓
+    Storage
+
+Options:
+
+-   Piper — local/open-source
+-   Kokoro — local/open model
+-   Creator-recorded voice
+-   Optional free/trial cloud TTS
+
+For the hackathon, creator-recorded voice is a reliable fallback.
+
+------------------------------------------------------------------------
+
+21. Whisper Caption Workflow
+
+    Final voice/audio
+          ↓
+    Whisper
+          ↓
+    Timestamped transcript
+          ↓
+    Caption JSON
+          ↓
+    FFmpeg / Remotion
+
+Example:
+
+    [
+      {
+        "text": "You're probably using AI wrong.",
+        "start": 0.0,
+        "end": 2.4
+      }
+    ]
+
+------------------------------------------------------------------------
+
+22. Avatar Workflow
+
+Support three modes:
+
+Mode A — Real creator footage
+
+Best MVP option.
+
+    Creator uploads clips
+           ↓
+    Storage
+           ↓
+    Scene planner chooses clip
+           ↓
+    FFmpeg
+
+Mode B — Open-source avatar
+
+    Creator image/video
+           ↓
+    Avatar model
+           ↓
+    Talking-head video
+           ↓
+    Storage
+
+Mode C — Cloud avatar
+
+Use only if a suitable free/trial API is available.
+
+The avatar system must only use the creator’s authorized likeness/voice.
+
+------------------------------------------------------------------------
+
+23. Workflow 6 — Video Renderer
+
+This is where the project becomes an actual video-production system.
+
+Input:
+
+    {
+      "resolution": "1080x1920",
+      "fps": 30,
+      "scenes": [...],
+      "audio": "...",
+      "captions": [...],
+      "brand": {...}
+    }
+
+n8n:
+
+    Scene JSON
+        ↓
+    Download all assets
+        ↓
+    Create render manifest
+        ↓
+    Execute Command / HTTP render worker
+        ↓
+    FFmpeg
+        ↓
+    MP4
+        ↓
+    Upload to storage
+        ↓
+    Return video URL
+
+------------------------------------------------------------------------
+
+24. FFmpeg Architecture
+
+FFmpeg performs:
+
+-   Clip trimming
+-   Clip concatenation
+-   9:16 conversion
+-   Cropping
+-   Scaling
+-   Overlaying creator video
+-   Adding B-roll
+-   Captions
+-   Logo
+-   Text
+-   Audio mixing
+-   Background music
+-   Volume normalization
+-   Transitions
+-   Final MP4 encoding
+
+The LLM does NOT directly edit the video.
+
+The LLM creates the plan.
+
+FFmpeg executes the plan.
+
+------------------------------------------------------------------------
+
+25. Render Worker
+
+Recommended approach:
+
+    n8n
+     ↓
+    HTTP Request
+     ↓
+    Your Render Worker
+     ↓
+    FFmpeg
+     ↓
+    Return job ID
+
+The render worker can be:
+
+-   Python + FastAPI
+-   Node.js
+-   Docker container
+
+Example API:
+
+    POST /render
+
+Body:
+
+    {
+      "project_id": "content_123",
+      "manifest_url": "https://storage/.../manifest.json"
+    }
+
+Response:
+
+    {
+      "job_id": "render_456",
+      "status": "processing"
+    }
+
+n8n then polls:
+
+    GET /render/render_456
+
+until:
+
+    {
+      "status": "completed",
+      "video_url": "https://storage/.../final.mp4"
+    }
+
+------------------------------------------------------------------------
+
+26. Remotion Alternative
+
+Instead of FFmpeg-only templates:
+
+    n8n
+     ↓
+    Generate JSON
+     ↓
+    Remotion template
+     ↓
+    Render
+     ↓
+    MP4
+
+Remotion is especially useful for:
+
+-   Animated captions
+-   Dynamic text
+-   Progress bars
+-   Branded layouts
+-   Charts
+-   UI-style scenes
+-   Reusable creator templates
+
+For MVP, use FFmpeg first and add Remotion only if needed.
+
+------------------------------------------------------------------------
+
+27. Storage Architecture
+
+Use:
+
+-   Supabase/Postgres for metadata
+-   Supabase Storage or Cloudflare R2 for media
+
+Do NOT store large videos directly inside database rows.
+
+Example:
+
+    Storage
+    ├── creators/
+    ├── source-clips/
+    ├── broll/
+    ├── ai-scenes/
+    ├── audio/
+    ├── renders/
+    └── thumbnails/
+
+Database stores URLs and metadata.
+
+------------------------------------------------------------------------
+
+28. Workflow 7 — Quality Assurance
+
+After rendering:
+
+    Final MP4
+       ↓
+    Check duration
+       ↓
+    Check resolution
+       ↓
+    Check file exists
+       ↓
+    Check audio
+       ↓
+    Check captions
+       ↓
+    Check prohibited/risky claims
+       ↓
+    Check source metadata
+       ↓
+    Approval
+
+If failed:
+
+    QA failure
+       ↓
+    n8n IF node
+       ↓
+    Repair workflow
+
+Do not regenerate the entire project if only one scene failed.
+
+------------------------------------------------------------------------
+
+29. Creator Approval
+
+For the hackathon, include a human approval gate.
+
+    Video ready
+         ↓
+    Webhook / Dashboard
+         ↓
+    Creator sees preview
+         ↓
+    Approve OR Reject
+
+Approve:
+
+    → Publishing workflow
+
+Reject:
+
+    → Feedback
+    → Strategy/script/media revision
+    → Render again
+
+This also makes the system safer and easier to demonstrate.
+
+------------------------------------------------------------------------
+
+30. Workflow 8 — YouTube Publishing
+
+Recommended first publishing integration: YouTube.
+
+Flow:
+
+    Creator clicks Connect YouTube
+              ↓
+    OAuth 2.0
+              ↓
+    Authorization callback
+              ↓
+    Store authorized credentials
+              ↓
+    n8n Publishing workflow
+              ↓
+    Upload MP4
+              ↓
+    Set title/description/tags/privacy
+              ↓
+    Save returned video ID
+
+YouTube’s API uses OAuth 2.0 for authorized uploads. The official upload
+documentation demonstrates setting title, description, keywords and
+privacy status.
+
+Official:
+https://developers.google.com/youtube/v3/guides/uploading_a_video
+
+------------------------------------------------------------------------
+
+31. YouTube n8n Connection
+
+Conceptual n8n workflow:
+
+    Webhook / Schedule
+          ↓
+    Get Render Record
+          ↓
+    Download MP4
+          ↓
+    YouTube OAuth Credential
+          ↓
+    YouTube Upload / HTTP Request
+          ↓
+    Set Metadata
+          ↓
+    Save Video ID
+          ↓
+    Supabase
+
+For API calls without a native n8n operation, use HTTP Request with
+OAuth2 or the appropriate credential method.
+
+n8n supports OAuth2 credentials and generic authentication through its
+HTTP Request node.
+
+------------------------------------------------------------------------
+
+32. Publishing Data
+
+Save:
+
+    {
+      "content_id": "content_123",
+      "platform": "youtube",
+      "platform_post_id": "abc123",
+      "status": "published",
+      "published_at": "2026-08-17T15:00:00Z",
+      "url": "https://youtube.com/watch?v=abc123"
+    }
+
+This ID is critical because the analytics workflow later needs to know
+which post belongs to which generated content.
+
+------------------------------------------------------------------------
+
+33. TikTok Publishing
+
+Treat TikTok as P1 rather than P0.
+
+Architecture:
+
+    ViralFlow
+       ↓
+    TikTok OAuth
+       ↓
+    Official Content Posting API
+       ↓
+    Upload/post
+       ↓
+    Save post ID
+
+Do not depend on unofficial scraping or browser automation.
+
+API approval and platform requirements should be checked before
+promising fully automated publishing.
+
+------------------------------------------------------------------------
+
+34. Workflow 9 — Analytics Collector
+
+Use a scheduled workflow.
+
+Example:
+
+    Schedule Trigger
+           ↓
+    Get published posts
+           ↓
+    YouTube Analytics API
+           ↓
+    Get metrics
+           ↓
+    Normalize
+           ↓
+    Supabase
+
+Collect where available:
+
+-   Views
+-   Likes
+-   Comments
+-   Watch time
+-   Average view duration
+-   Audience retention
+-   Engagement
+-   Publication age
+
+------------------------------------------------------------------------
+
+35. Analytics Schema
+
+    {
+      "content_id": "content_123",
+      "platform": "youtube",
+      "timestamp": "...",
+      "views": 12000,
+      "likes": 900,
+      "comments": 120,
+      "watch_time": 42000,
+      "avg_view_duration": 31.2
+    }
+
+Do not compare raw views from posts with different ages without
+normalization.
+
+------------------------------------------------------------------------
+
+36. Workflow 10 — Learning Engine
+
+    Analytics
+        ↓
+    Get content attributes
+        ↓
+    Get Creator DNA
+        ↓
+    Performance Agent
+        ↓
+    Identify patterns
+        ↓
+    Save learning
+        ↓
+    Update Creator DNA
+
+Example:
+
+    {
+      "insight": "Question hooks outperform statement hooks.",
+      "evidence": {
+        "question_hook_avg_retention": 0.61,
+        "statement_hook_avg_retention": 0.43
+      },
+      "confidence": 0.78
+    }
+
+The next Strategy Agent receives this learning.
+
+------------------------------------------------------------------------
+
+37. The Complete n8n Connection
+
+The final system should look like:
+
+                       CREATOR DASHBOARD
+                              │
+                              ▼
+                         n8n WEBHOOK
+                              │
+                              ▼
+                      ┌───────────────┐
+                      │   SUPABASE    │
+                      └───────┬───────┘
+                              │
+                 ┌────────────┴────────────┐
+                 ▼                         ▼
+           TREND WORKFLOW             CREATOR DNA
+                 │                         │
+                 └────────────┬────────────┘
+                              ▼
+                        LLM / AGENTS
+                              │
+                              ▼
+                        CONTENT PLAN
+                              │
+                              ▼
+                       MEDIA WORKFLOW
+                        /     |      \
+                       /      |       \
+                  Pexels    AI Video  Creator
+                    \         |       /
+                     \        |      /
+                      └───────┴─────┘
+                              │
+                              ▼
+                         TTS / AUDIO
+                              │
+                              ▼
+                       WHISPER CAPTIONS
+                              │
+                              ▼
+                      RENDER WORKER
+                      FFmpeg/Remotion
+                              │
+                              ▼
+                         MP4 STORAGE
+                              │
+                              ▼
+                        QA WORKFLOW
+                              │
+                              ▼
+                        APPROVAL GATE
+                              │
+                              ▼
+                      PUBLISHING WORKFLOW
+                        /            \
+                   YouTube          TikTok
+                        \            /
+                         └────┬─────┘
+                              ▼
+                         POST ID
+                              │
+                              ▼
+                      ANALYTICS WORKFLOW
+                              │
+                              ▼
+                       LEARNING AGENT
+                              │
+                              ▼
+                        CREATOR DNA
+                              │
+                              └────→ NEXT CONTENT
+
+------------------------------------------------------------------------
+
+38. How n8n Should Connect to APIs
+
+For every REST API:
+
+    HTTP Request Node
+
+Configure:
+
+1.  Method
+2.  URL
+3.  Authentication
+4.  Query parameters
+5.  Headers
+6.  JSON/body
+7.  Response handling
+
+Do not hard-code secrets.
+
+Use n8n Credentials.
+
+Example:
+
+    HTTP Request
+    Authentication:
+    Bearer Auth
+
+    Header:
+    Authorization: Bearer {{$credentials.apiKey}}
+
+n8n supports generic authentication methods such as header, bearer,
+OAuth1 and OAuth2 for HTTP requests.
+
+------------------------------------------------------------------------
+
+39. How n8n Connects to Your Own Render Server
+
+Run your render service separately:
+
+    FastAPI / Node
+           ↓
+    FFmpeg
+
+n8n sends:
+
+    {
+      "content_id": "123",
+      "manifest": "https://storage/manifest.json"
+    }
+
+Render server responds:
+
+    {
+      "job_id": "789"
+    }
+
+n8n waits/polls.
+
+This is better than trying to make n8n itself become the video editor.
+
+------------------------------------------------------------------------
+
+40. Workflow Communication
+
+Use a standard project ID.
+
+Every stage receives:
+
+    content_id
+    creator_id
+
+Example:
+
+    creator_id = creator_001
+    content_id = content_0042
+
+Then every asset, script, render and publication is connected to the
+same content ID.
+
+This prevents the system from losing track of which video belongs to
+which trend.
+
+------------------------------------------------------------------------
+
+41. Recommended Database Relationships
+
+    Creator
+      │
+      ├── Creator DNA
+      │
+      ├── Trends
+      │      │
+      │      └── Content Ideas
+      │              │
+      │              └── Script
+      │                    │
+      │                    └── Assets
+      │                          │
+      │                          └── Render
+      │                                │
+      │                                └── Publication
+      │                                      │
+      │                                      └── Analytics
+      │                                            │
+      │                                            └── Learning
+      │                                                  │
+      └──────────────────────────────────────────────────┘
+
+------------------------------------------------------------------------
+
+42. Error Handling
+
+Every workflow should include:
+
+    Main operation
+          ↓
+    IF success
+          ↓
+    Next stage
+
+    IF failure
+          ↓
+    Error workflow
+          ↓
+    Retry / fallback / human review
+
+Examples:
+
+API timeout
+
+Retry with increasing delay.
+
+Rate limit
+
+Wait and retry.
+
+AI invalid JSON
+
+Run JSON validator → repair once → fallback model.
+
+Video generation failure
+
+Use stock/creator footage fallback.
+
+FFmpeg failure
+
+Save logs → identify failed scene → rerender.
+
+Publishing failure
+
+Check publication status before retrying to avoid duplicates.
+
+Fact-check failure
+
+Stop automatic publishing and request approval.
+
+------------------------------------------------------------------------
+
+43. Free/Low-Cost Technology Stack
+
+  -----------------------------------------------------------------------
+  Function                Primary                 Fallback
+  ----------------------- ----------------------- -----------------------
+  Automation              n8n Community Edition   n8n Cloud
+
+  LLM                     OmniRoute / OpenRouter  Other API-compatible
+                          free models             model
+
+  Database                Supabase Free           PostgreSQL
+
+  Storage                 Supabase Storage /      Local demo storage
+                          Cloudflare R2           
+
+  Trend discovery         YouTube API +           Additional approved
+                          RSS/public sources      APIs
+
+  Stock media             Pexels API              Creator media
+
+  Video editing           FFmpeg                  Remotion
+
+  AI video                Local Wan/LTX/Hunyuan   Limited cloud API
+
+  TTS                     Piper / Kokoro          Free cloud tier
+
+  Transcription           Whisper                 Platform captions
+
+  Avatar                  Creator footage         Open-source avatar
+                                                  model
+
+  Publishing              YouTube API             Export/draft
+
+  Analytics               YouTube Analytics API   Platform-specific API
+  -----------------------------------------------------------------------
+
+Free quotas can change, so the system must use provider abstraction
+rather than assuming a specific provider will remain free.
+
+------------------------------------------------------------------------
+
+44. Security
+
+-   Store API keys in n8n Credentials.
+-   Never expose API keys in frontend JavaScript.
+-   Store OAuth tokens securely.
+-   Keep creator media private.
+-   Use authenticated webhooks.
+-   Validate all incoming webhook data.
+-   Use HTTPS.
+-   Separate development and production credentials.
+-   Maintain audit logs.
+-   Do not put secrets into LLM prompts.
+-   Give each service only the permissions it needs.
+
+------------------------------------------------------------------------
+
+45. Copyright and Content Rules
+
+ViralFlow should:
+
+-   Create original scripts.
+-   Avoid copying viral videos.
+-   Store source URLs.
+-   Track stock-media source.
+-   Follow stock API license requirements.
+-   Use authorized creator likeness/voice.
+-   Avoid unauthorized impersonation.
+-   Fact-check claims.
+-   Keep human approval available.
+-   Follow social platform API and automation rules.
+
+------------------------------------------------------------------------
+
+46. MVP Requirements
+
+P0
+
+-   Creator onboarding
+-   Creator DNA
+-   YouTube trend ingestion
+-   One additional trend source
+-   Opportunity scoring
+-   LLM strategy
+-   Script generation
+-   Fact checker
+-   Scene planner
+-   Pexels integration
+-   Creator footage
+-   TTS
+-   Whisper captions
+-   FFmpeg rendering
+-   Supabase database
+-   n8n orchestration
+-   YouTube publishing
+-   Basic analytics
+-   Learning engine
+
+P1
+
+-   TikTok publishing
+-   AI avatar
+-   More AI video models
+-   Advanced trend forecasting
+-   A/B hooks
+-   Multiple creators/team accounts
+-   Advanced analytics
+-   Cloud rendering fallback
+
+------------------------------------------------------------------------
+
+47. 7–14 Day Implementation Plan
+
+Day 1
+
+-   n8n
+-   Supabase
+-   Database
+-   Credentials
+-   Basic frontend
+
+Day 2
+
+-   Creator onboarding
+-   Creator DNA
+
+Day 3
+
+-   YouTube trend ingestion
+
+Day 4
+
+-   Trend scoring
+-   Opportunity dashboard
+
+Day 5
+
+-   Strategy agent
+-   Script agent
+-   Fact checker
+
+Day 6
+
+-   Pexels integration
+-   Asset management
+
+Day 7
+
+-   FFmpeg render pipeline
+-   First complete video
+
+Day 8
+
+-   Whisper
+-   TTS
+-   Captions
+
+Day 9
+
+-   Creator footage/avatar workflow
+
+Day 10
+
+-   YouTube OAuth
+-   Publishing
+
+Day 11
+
+-   Analytics
+
+Day 12
+
+-   Learning engine
+
+Day 13
+
+-   Error handling
+-   UI polish
+
+Day 14
+
+-   Full autonomous demo
+-   Testing
+-   Presentation
+
+------------------------------------------------------------------------
+
+48. Hackathon Demo
+
+Example:
+
+Creator:
+
+  “I make AI content for Pakistani university students.”
+
+ViralFlow finds:
+
+    Trend A
+    1.2M views
+    High saturation
+    Creator fit: 61
+
+    Trend B
+    250K views
+    Rapid growth
+    Creator fit: 94
+    Novelty: 88
+
+The agent chooses Trend B.
+
+Then:
+
+    Trend
+     ↓
+    Unique angle
+     ↓
+    Hook
+     ↓
+    45-second script
+     ↓
+    Fact check
+     ↓
+    Scene plan
+     ↓
+    Pexels B-roll
+     ↓
+    AI-generated visual
+     ↓
+    Creator footage
+     ↓
+    Voice
+     ↓
+    Whisper captions
+     ↓
+    FFmpeg
+     ↓
+    Final 9:16 MP4
+     ↓
+    YouTube
+     ↓
+    Analytics
+     ↓
+    Learning
+
+The judge then sees the system recommend the next video differently
+because the previous video performed better with a certain hook.
+
+That is the key demonstration.
+
+------------------------------------------------------------------------
+
+49. Success Metrics
+
+-   Complete one full content cycle automatically.
+
+-   90% successful video renders.
+
+-   Valid structured AI output after validation/retry.
+
+-   All important claims checked or flagged.
+
+-   At least one official publishing integration.
+
+-   Analytics linked to generated content.
+
+-   Learning record generated after publication.
+
+-   Same trend produces different content for different Creator DNA.
+
+-   MVP can operate primarily with free/open-source components.
+
+------------------------------------------------------------------------
+
+50. Main Risks
+
+  -----------------------------------------------------------------------
+  Risk                                Solution
+  ----------------------------------- -----------------------------------
+  No GPU                              Use Pexels + creator footage;
+                                      generate only a few AI scenes
+
+  AI video quality poor               Use AI for short B-roll, not entire
+                                      video
+
+  Free API quota exhausted            Cache + local models + provider
+                                      abstraction
+
+  Social API approval delayed         YouTube first + export/draft
+                                      fallback
+
+  Avatar quality poor                 Real creator footage as default
+
+  Hallucinations                      Fact checker + approval gate
+
+  Copyright                           Original scripts + licensed media
+
+  Too much complexity                 One platform + one video format for
+                                      MVP
+  -----------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+51. Final Recommended Architecture
+
+    Frontend
+       ↓
+    n8n
+       ↓
+    Supabase
+       ↓
+    Trend APIs
+       ↓
+    LLM / OmniRoute
+       ↓
+    Content Strategy
+       ↓
+    Script + Fact Check
+       ↓
+    Scene JSON
+       ↓
+    Pexels + AI Video + Creator Media
+       ↓
+    TTS + Whisper
+       ↓
+    FFmpeg / Remotion
+       ↓
+    Storage
+       ↓
+    QA
+       ↓
+    Approval
+       ↓
+    YouTube API
+       ↓
+    Analytics API
+       ↓
+    Learning Agent
+       ↓
+    Creator DNA
+
+------------------------------------------------------------------------
+
+52. Core Design Rule
+
+  AI is the brain. n8n is the orchestrator. FFmpeg/Remotion are the
+  hands. APIs provide the senses and external actions. Supabase stores
+  the memory.
+
+Do not make ViralFlow dependent on one AI video model.
+
+The strongest hackathon architecture is a modular pipeline where the AI
+decides what should happen and deterministic tools execute it.
+
+------------------------------------------------------------------------
+
+53. Final Pitch
+
+  ViralFlow AI doesn’t just generate videos. It decides what a creator
+  should make, creates it in their style, publishes it, learns from
+  audience response, and uses that learning to decide what to make next.
+
+Core Differentiator
+
+Most AI content tools:
+
+    Prompt → Content
+
+ViralFlow:
+
+    Real-world trends
+          ↓
+    AI opportunity detection
+          ↓
+    Creator-specific decision
+          ↓
+    Autonomous production
+          ↓
+    Publishing
+          ↓
+    Real performance
+          ↓
+    Learning
+          ↓
+    Better next decision
+
+This closed loop is the product.
