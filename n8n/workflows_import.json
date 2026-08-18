@@ -1,0 +1,151 @@
+{
+  "name": "ViralFlow AI Orchestration Suite",
+  "workflows": [
+    {
+      "name": "ViralFlow_TrendScanner",
+      "nodes": [
+        {
+          "parameters": {
+            "rule": "interval",
+            "interval": 30,
+            "unit": "minutes"
+          },
+          "id": "node-trigger-cron",
+          "name": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "url": "https://www.googleapis.com/youtube/v3/search",
+            "sendQuery": true,
+            "queryParameters": {
+              "parameters": [
+                { "name": "part", "value": "snippet" },
+                { "name": "q", "value": "AI coding agents, Next.js tutorial" },
+                { "name": "type", "value": "video" },
+                { "name": "maxResults", "value": "10" }
+              ]
+            },
+            "authentication": "predefined",
+            "nodeCredentialType": "googleApi"
+          },
+          "id": "node-yt-search",
+          "name": "YouTube Search API",
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "upsert",
+            "schema": "public",
+            "table": "trends",
+            "columns": "title, url, source, external_id"
+          },
+          "id": "node-supabase-upsert",
+          "name": "Supabase Save Trends",
+          "type": "n8n-nodes-base.supabase",
+          "typeVersion": 1,
+          "position": [680, 300]
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "YouTube Search API",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "YouTube Search API": {
+          "main": [
+            [
+              {
+                "node": "Supabase Save Trends",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "ViralFlow_VideoRenderTrigger",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "content/generate",
+            "responseMode": "onReceived"
+          },
+          "id": "node-webhook-trigger",
+          "name": "Webhook Trigger",
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 1,
+          "position": [200, 400]
+        },
+        {
+          "parameters": {
+            "model": "google/gemini-1.5-pro",
+            "prompt": "=Write a 45-second script about: {{ $json[\"body\"][\"trend_title\"] }} based on Creator DNA: {{ $json[\"body\"][\"dna\"] }}. Return only JSON format."
+          },
+          "id": "node-llm-script",
+          "name": "Script Agent LLM",
+          "type": "n8n-nodes-base.openRouter",
+          "typeVersion": 1,
+          "position": [420, 400]
+        },
+        {
+          "parameters": {
+            "method": "POST",
+            "url": "http://localhost:5000/render",
+            "sendBody": true,
+            "bodyParameters": {
+              "parameters": [
+                { "name": "content_id", "value": "={{ $json[\"content_id\"] }}" },
+                { "name": "scenes", "value": "={{ $json[\"scenes\"] }}" },
+                { "name": "audio_url", "value": "={{ $json[\"audio_url\"] }}" }
+              ]
+            }
+          },
+          "id": "node-render-worker-call",
+          "name": "Trigger Render Worker",
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 4,
+          "position": [650, 400]
+        }
+      ],
+      "connections": {
+        "Webhook Trigger": {
+          "main": [
+            [
+              {
+                "node": "Script Agent LLM",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Script Agent LLM": {
+          "main": [
+            [
+              {
+                "node": "Trigger Render Worker",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}
