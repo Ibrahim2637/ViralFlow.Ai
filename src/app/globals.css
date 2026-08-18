@@ -263,9 +263,13 @@ button, input, select, textarea {
   /* Sidebar Drawer Collapse */
   .sidebar-nav {
     transform: translateX(-100%);
+    transition: transform var(--transition-normal);
   }
   .sidebar-nav.open {
     transform: translateX(0);
+  }
+  .sidebar-nav.collapsed {
+    transform: translateX(-260px);
   }
   .mobile-header-bar {
     display: flex !important;

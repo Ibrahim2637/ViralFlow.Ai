@@ -190,6 +190,7 @@ export default function Sidebar({ onMobileToggle, isCollapsed = false, onToggleC
 
       {/* Sidebar main view */}
       <aside 
+        className={`sidebar-nav ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -201,11 +202,8 @@ export default function Sidebar({ onMobileToggle, isCollapsed = false, onToggleC
           position: 'fixed',
           top: 0,
           left: 0,
-          zIndex: 50,
-          transform: isCollapsed ? 'translateX(-260px)' : 'translateX(0)',
-          transition: 'transform var(--transition-normal)'
+          zIndex: 50
         }}
-        className={`sidebar-nav ${isOpen ? 'open' : ''}`}
       >
         {/* Logo links back to landing page with toggle button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', paddingLeft: '8px' }}>
