@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,6 +36,10 @@ export default function RootLayout({
         />
       </head>
       <body style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+        {/* Theme toggle button */}
+        <header className="flex justify-end p-2">
+          <ThemeSwitcher />
+        </header>
         {children}
       </body>
     </html>
