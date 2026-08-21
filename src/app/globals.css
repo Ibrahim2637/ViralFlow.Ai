@@ -1,52 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
 
 /* Dynamic Theme Variable Declarations */
 :root {
-  /* Default: Dark Theme (Deep Space Slate) */
-  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Default: Cyber-Obsidian Cyber-Brutalist Theme */
+  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   /* Colors */
-  --bg-base: #000000;
-  --bg-surface: #121212;
-  --bg-surface-translucent: rgba(0, 0, 0, 0.75);
-  --bg-surface-hover: #1e1e1e;
-  --bg-panel: #121212;
-  --border-color: #262626;
-  --border-color-hover: #404040;
-
-  --text-primary: #f5f5f5;
-  --text-secondary: #a3a3a3;
-  --text-muted: #737373;
-
-  --accent-primary: #3b82f6;       /* Vibrant Blue Accent */
-  --accent-primary-hover: #60a5fa; /* Lighter blue hover */
-  --accent-glow: rgba(229, 229, 229, 0.15);
+  --bg-base: #020204;              /* Deep Pitch Black */
+  --bg-surface: #0a0a0f;          /* Cyber Dark Surface */
+  --bg-surface-translucent: rgba(2, 2, 4, 0.85);
+  --bg-surface-hover: #12121c;
+  --bg-panel: #0a0a0f;
   
-  --accent-secondary: #a3a3a3;     /* Sleek Medium Grey */
-  --accent-secondary-hover: #d4d4d4;
-  
-  --success: #10b981;              
-  --success-glow: rgba(16, 185, 129, 0.08);
-  --warning: #f59e0b;              
-  --warning-glow: rgba(245, 158, 11, 0.08);
-  --error: #ef4444;                
-  --error-glow: rgba(239, 68, 68, 0.08);
+  --border-color: #00f0ff;          /* 3px Solid Cyber Cyan */
+  --border-color-hover: #ccff00;    /* Electric Lime hover */
+  --border-width: 3px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-glow: 0 0 15px var(--accent-glow);
+  --text-primary: #f0f0ff;
+  --text-secondary: #a0a0c0;
+  --text-muted: #606080;
+
+  --accent-primary: #00f0ff;        /* Cyber Cyan Accent */
+  --accent-primary-hover: #80f8ff;  /* Lighter Cyan hover */
+  --accent-glow: rgba(0, 240, 255, 0.2);
+  
+  --accent-secondary: #ccff00;      /* Electric Lime Accent */
+  --accent-secondary-hover: #e0ff66;
+  --accent-pink: #ff0055;           /* Acid Magenta Accent */
+  
+  --success: #00ff66;              
+  --success-glow: rgba(0, 255, 102, 0.15);
+  --warning: #ffb700;              
+  --warning-glow: rgba(255, 183, 0, 0.15);
+  --error: #ff0055;                
+  --error-glow: rgba(255, 0, 85, 0.15);
+
+  /* Cyber-Brutalist 3D Drop Shadows */
+  --shadow-sm: 2px 2px 0px #00f0ff;
+  --shadow-md: 4px 4px 0px #00f0ff;
+  --shadow-lg: 6px 6px 0px #00f0ff;
+  --shadow-brutal-cyan: 4px 4px 0px #00f0ff;
+  --shadow-brutal-lime: 4px 4px 0px #ccff00;
+  --shadow-brutal-pink: 4px 4px 0px #ff0055;
+  --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.35);
 
   /* Borders & Spacing */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
   --radius-full: 9999px;
 
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
+  --transition-fast: 0.12s ease;
+  --transition-normal: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="light"] {
@@ -125,18 +132,87 @@ button, input, select, textarea {
   outline: none;
 }
 
-/* Glassmorphism utility helpers */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+/* Cyber-Brutalist 3D Utility Classes */
+.glass-panel, .cyber-card {
+  background: var(--bg-surface);
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: var(--shadow-brutal-cyan);
+  border-radius: var(--radius-md);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
-[data-theme="light"] .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+.glass-panel:hover, .cyber-card:hover {
+  border-color: var(--border-color-hover);
+  box-shadow: var(--shadow-brutal-lime);
+}
+
+.cyber-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--accent-primary);
+  color: #020204;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 3px solid #020204;
+  box-shadow: 4px 4px 0px #020204, 4px 4px 0px 3px var(--accent-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.cyber-btn-primary:hover {
+  transform: translate(-2px, -2px);
+  background-color: var(--accent-secondary);
+  box-shadow: 6px 6px 0px #020204, 6px 6px 0px 3px var(--accent-primary);
+}
+
+.cyber-btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #020204;
+}
+
+.cyber-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--accent-glow);
+  color: var(--accent-primary);
+  border: 2px solid var(--accent-primary);
+  box-shadow: 2px 2px 0px var(--accent-primary);
+  border-radius: var(--radius-sm);
+}
+
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.cyber-scanline {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.6;
 }
 
 /* Scrollbar customization */

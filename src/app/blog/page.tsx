@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Sparkles, ArrowLeft, Calendar, Clock, BookOpen, User } from 'lucide-react';
+import CyberTiltCard from '@/components/CyberTiltCard';
+import { Sparkles, ArrowLeft, Calendar, Clock, BookOpen, User, Terminal } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface BlogPost {
@@ -104,59 +105,44 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
       color: 'var(--text-primary)',
       display: 'flex',
       flexDirection: 'column',
-      position: 'relative',
-      fontFamily: 'var(--font-body)'
+      position: 'relative'
     }}>
-      {/* Navigation Header */}
+      {/* Cyber Navigation Header */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '24px 40px',
-        maxWidth: '1200px',
+        padding: '16px 32px',
+        maxWidth: '1280px',
         width: '100%',
-        margin: '0 auto',
-        zIndex: 10
+        margin: '16px auto 0 auto',
+        zIndex: 10,
+        backgroundColor: 'var(--bg-surface-translucent)',
+        border: '3px solid var(--border-color)',
+        boxShadow: '4px 4px 0px #00f0ff',
+        borderRadius: 'var(--radius-md)'
       }}>
         <Link href="/" style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: '12px',
           color: 'var(--accent-primary)',
-          fontSize: '1.5rem',
+          fontSize: '1.4rem',
           fontWeight: 800,
           fontFamily: 'var(--font-heading)'
         }}>
-          <Sparkles size={24} />
-          <span>ViralFlow AI</span>
+          <div style={{ padding: '6px', backgroundColor: '#020204', border: '2px solid var(--accent-primary)', color: 'var(--accent-primary)', display: 'flex' }}>
+            <Sparkles size={20} />
+          </div>
+          <span>VIRALFLOW.AI</span>
         </Link>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <Link href="/" style={{
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            color: 'var(--text-secondary)',
-            transition: 'color var(--transition-fast)'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            Back to Home
+          <Link href="/" style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            [HOME]
           </Link>
-          <Link href={isLoggedIn ? "/dashboard" : "/signup"} style={{
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#ffffff',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            boxShadow: 'var(--shadow-glow)',
-            transition: 'background-color var(--transition-fast)'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary)'}
-          >
-            Launch Studio
+          <Link href={isLoggedIn ? "/dashboard" : "/signup"} className="cyber-btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+            LAUNCH STUDIO
           </Link>
           <ThemeToggle />
         </div>
@@ -164,7 +150,7 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
 
       {/* Main Container */}
       <main style={{
-        maxWidth: '900px',
+        maxWidth: '1000px',
         width: '100%',
         margin: '0 auto',
         padding: '60px 24px',
@@ -172,74 +158,65 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
       }}>
         {/* Page Header */}
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <div className="cyber-badge" style={{ marginBottom: '16px' }}>INTEL & ENGINEERING INSIGHTS</div>
           <h1 style={{
-            fontSize: '3rem',
+            fontSize: '3.5rem',
             fontFamily: 'var(--font-heading)',
             fontWeight: 800,
+            textTransform: 'uppercase',
             marginBottom: '16px'
           }}>
-            ViralFlow Insights
+            CYBER-AGENTIC INSIGHTS
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '600px', margin: '0 auto' }}>
-            In-depth guides on autonomous n8n orchestration, voice synthesis safety, and Remotion rendering pipelines.
+          <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.95rem', maxWidth: '650px', margin: '0 auto' }}>
+            [DEEP DIVES ON N8N ORCHESTRATION, VOICE DNA SAFETY, AND FFMPEG RENDERING WORKERS]
           </p>
         </div>
 
-        {/* Blog Post Grid */}
+        {/* Cyber Blog Post Grid with 3D Tilt Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {blogPosts.map(post => (
-            <article 
-              key={post.id}
-              className="glass-panel"
-              style={{
-                padding: '36px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-color)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                cursor: 'pointer',
-                transition: 'border-color var(--transition-fast)'
-              }}
-              onClick={() => setSelectedPost(post)}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <span style={{ backgroundColor: 'var(--accent-glow)', color: 'var(--accent-primary)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {post.category}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12} /> {post.date}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {post.readTime}</span>
-              </div>
+          {blogPosts.map((post, idx) => (
+            <div key={post.id} onClick={() => setSelectedPost(post)}>
+              <CyberTiltCard borderColor={idx === 0 ? 'cyan' : idx === 1 ? 'lime' : 'pink'} style={{ padding: '36px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  <span className="cyber-badge" style={{
+                    borderColor: idx === 0 ? 'var(--accent-primary)' : idx === 1 ? 'var(--accent-secondary)' : 'var(--accent-pink)',
+                    color: idx === 0 ? 'var(--accent-primary)' : idx === 1 ? 'var(--accent-secondary)' : 'var(--accent-pink)'
+                  }}>
+                    [{post.category.toUpperCase()}]
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12} /> {post.date}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {post.readTime}</span>
+                </div>
 
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
-                {post.title}
-              </h2>
-              
-              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.95rem' }}>
-                {post.excerpt}
-              </p>
+                <h2 style={{ fontSize: '1.65rem', fontWeight: 800, fontFamily: 'var(--font-heading)', marginBottom: '12px', textTransform: 'uppercase' }}>
+                  {post.title}
+                </h2>
+                
+                <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.95rem', marginBottom: '20px' }}>
+                  {post.excerpt}
+                </p>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <User size={14} /> By {post.author}
-                </span>
-                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Read Article &rarr;
-                </span>
-              </div>
-            </article>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <User size={14} /> AUTHOR: {post.author.toUpperCase()}
+                  </span>
+                  <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    READ TRANSMISSION &rarr;
+                  </span>
+                </div>
+              </CyberTiltCard>
+            </div>
           ))}
         </div>
       </main>
 
-      {/* Reader Modal */}
+      {/* Cyber Terminal Reader Drawer Modal */}
       {selectedPost && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backgroundColor: 'rgba(2, 2, 4, 0.85)',
           backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
@@ -247,14 +224,12 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
           zIndex: 100,
           padding: '24px'
         }}>
-          <div className="glass-panel" style={{
+          <CyberTiltCard borderColor="cyan" style={{
             width: '100%',
-            maxWidth: '750px',
-            borderRadius: 'var(--radius-lg)',
+            maxWidth: '800px',
             padding: '40px',
             maxHeight: '85vh',
             overflowY: 'auto',
-            boxShadow: 'var(--shadow-lg)',
             display: 'flex',
             flexDirection: 'column',
             gap: '24px'
@@ -267,33 +242,30 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '0.85rem',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                backgroundColor: 'transparent',
-                border: 'none',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                color: 'var(--accent-primary)',
                 cursor: 'pointer'
               }}
             >
-              <ArrowLeft size={16} /> Back to Blog List
+              <ArrowLeft size={16} /> [RETURN TO TRANSMISSIONS]
             </button>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                <span style={{ backgroundColor: 'var(--accent-glow)', color: 'var(--accent-primary)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {selectedPost.category}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                <span className="cyber-badge">[{selectedPost.category.toUpperCase()}]</span>
                 <span>{selectedPost.date}</span>
                 <span>{selectedPost.readTime}</span>
               </div>
-              <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', fontWeight: 800, lineHeight: '1.25' }}>
+              <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', fontWeight: 800, lineHeight: '1.2', textTransform: 'uppercase' }}>
                 {selectedPost.title}
               </h2>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <User size={14} /> Published by {selectedPost.author}
+              <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <User size={14} /> AUTHOR: {selectedPost.author.toUpperCase()}
               </div>
             </div>
 
-            <hr style={{ border: '0', borderTop: '1px solid var(--border-color)', margin: '0' }} />
+            <hr style={{ border: '0', borderTop: '2px solid var(--border-color)', margin: '0' }} />
 
             <div 
               style={{
@@ -311,33 +283,24 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
 
             <button
               onClick={() => setSelectedPost(null)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--accent-primary)',
-                color: '#ffffff',
-                fontWeight: 600,
-                cursor: 'pointer',
-                textAlign: 'center',
-                marginTop: '16px'
-              }}
+              className="cyber-btn-primary"
+              style={{ width: '100%', marginTop: '16px' }}
             >
-              Done Reading
+              CLOSE TRANSMISSION
             </button>
-          </div>
+          </CyberTiltCard>
         </div>
       )}
 
-      {/* Footer */}
+      {/* Cyber Footer */}
       <footer style={{
         marginTop: 'auto',
-        borderTop: '1px solid var(--border-color)',
+        borderTop: '3px solid var(--border-color)',
         padding: '32px 40px',
         backgroundColor: 'var(--bg-surface)'
       }}>
         <div style={{
-          maxWidth: '1200px',
+          maxWidth: '1280px',
           width: '100%',
           margin: '0 auto',
           display: 'flex',
@@ -345,16 +308,16 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px'
-        }} className="landing-footer-container">
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            &copy; 2026 ViralFlow AI. All rights reserved.
+        }}>
+          <span style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            &copy; 2026 VIRALFLOW AI. CYBER-BRUTALIST ARCHITECTURE.
           </span>
-          <div style={{ display: 'flex', gap: '24px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <Link href="/" style={{ transition: 'color var(--transition-fast)' }}>
-              Home
+          <div style={{ display: 'flex', gap: '24px', fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-primary)' }}>
+            <Link href="/" style={{ textTransform: 'uppercase' }}>
+              [HOME]
             </Link>
-            <Link href="/login" style={{ transition: 'color var(--transition-fast)' }}>
-              Creator Log In
+            <Link href="/login" style={{ textTransform: 'uppercase' }}>
+              [CREATOR LOG IN]
             </Link>
           </div>
         </div>

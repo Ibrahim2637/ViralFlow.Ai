@@ -108,17 +108,21 @@ export default function Sidebar({ onMobileToggle, isCollapsed = false, onToggleC
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: '10px 16px',
+            padding: '10px 14px',
             borderRadius: 'var(--radius-sm)',
-            color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-            backgroundColor: isActive ? 'var(--accent-glow)' : 'transparent',
-            fontWeight: isActive ? 600 : 500,
-            transition: 'all var(--transition-fast)',
-            borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent'
+            color: isActive ? '#020204' : 'var(--text-secondary)',
+            backgroundColor: isActive ? 'var(--accent-primary)' : 'transparent',
+            fontWeight: isActive ? 800 : 500,
+            fontFamily: isActive ? 'var(--font-mono)' : 'var(--font-body)',
+            textTransform: isActive ? 'uppercase' : 'none',
+            fontSize: '0.85rem',
+            border: isActive ? '2px solid #020204' : '2px solid transparent',
+            boxShadow: isActive ? '3px 3px 0px #ccff00' : 'none',
+            transition: 'all var(--transition-fast)'
           }}
           onMouseEnter={(e) => {
             if (!isActive) {
-              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.color = 'var(--accent-primary)';
               e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
             }
           }}
@@ -130,7 +134,7 @@ export default function Sidebar({ onMobileToggle, isCollapsed = false, onToggleC
           }}
         >
           <Icon size={18} />
-          <span style={{ fontSize: '0.85rem' }}>{link.name}</span>
+          <span>{link.name}</span>
         </Link>
       );
     });
