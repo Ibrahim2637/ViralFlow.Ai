@@ -149,7 +149,7 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
         </div>
 
         {/* Mobile Hamburger & Theme Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
+        <div style={{ alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
           <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

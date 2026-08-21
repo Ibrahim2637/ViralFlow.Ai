@@ -308,7 +308,7 @@ button, input, select, textarea {
    ======================================================= */
 
 .mobile-menu-btn {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 1024px) {

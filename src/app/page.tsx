@@ -137,7 +137,7 @@ export default function Home() {
         </div>
 
         {/* Mobile Hamburger & Theme Toggle Button Container */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
+        <div style={{ alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
           <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
