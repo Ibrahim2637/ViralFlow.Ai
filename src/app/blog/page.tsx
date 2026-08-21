@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import CyberTiltCard from '@/components/CyberTiltCard';
-import { Sparkles, ArrowLeft, Calendar, Clock, BookOpen, User, Terminal } from 'lucide-react';
+import { Sparkles, ArrowLeft, Calendar, Clock, BookOpen, User, Terminal, Menu, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface BlogPost {
@@ -21,6 +21,7 @@ interface BlogPost {
 export default function BlogHub() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -137,7 +138,7 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
           <span>VIRALFLOW.AI</span>
         </Link>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }} className="desktop-header-auth">
           <Link href="/" style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
             [HOME]
           </Link>
@@ -146,7 +147,76 @@ Rather than trusting the initial script draft, the n8n orchestrator triggers a s
           </Link>
           <ThemeToggle />
         </div>
+
+        {/* Mobile Hamburger & Theme Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
+          <ThemeToggle />
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              padding: '8px',
+              backgroundColor: '#020204',
+              border: '2px solid var(--accent-primary)',
+              color: 'var(--accent-primary)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </header>
+
+      {/* Cyber Mobile Drawer Overlay Menu */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '70px',
+          left: '12px',
+          right: '12px',
+          backgroundColor: '#020204',
+          border: '3px solid var(--accent-primary)',
+          boxShadow: '6px 6px 0px #00f0ff',
+          borderRadius: 'var(--radius-md)',
+          padding: '24px',
+          zIndex: 99,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Link 
+              href="/" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontSize: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}
+            >
+              [HOME]
+            </Link>
+            <Link 
+              href="/blog" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontSize: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}
+            >
+              [BLOG INSIGHTS]
+            </Link>
+          </nav>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '8px' }}>
+            <Link 
+              href={isLoggedIn ? "/dashboard" : "/signup"} 
+              onClick={() => setMobileMenuOpen(false)}
+              className="cyber-btn-primary" 
+              style={{ width: '100%', textAlign: 'center' }}
+            >
+              {isLoggedIn ? 'LAUNCH CREATOR STUDIO' : 'GET STARTED'}
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <main style={{

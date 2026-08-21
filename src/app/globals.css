@@ -304,8 +304,12 @@ button, input, select, textarea {
 }
 
 /* =======================================================
-   MEDIA QUERIES (Responsiveness & Mobile layouts)
+   RESPONSIVE DESIGN SYSTEM UTILITIES (Mobile & Tablet)
    ======================================================= */
+
+.mobile-menu-btn {
+  display: none;
+}
 
 @media (max-width: 1024px) {
   .split-grid {
@@ -318,8 +322,8 @@ button, input, select, textarea {
     grid-template-columns: repeat(2, 1fr) !important;
   }
   .workflow-grid-3 {
-    grid-template-columns: 1fr !important;
-    gap: 24px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
   }
   .studio-columns {
     grid-template-columns: 1fr !important;
@@ -385,26 +389,24 @@ button, input, select, textarea {
     margin-top: 12px;
   }
 
-  /* Landing responsiveness */
-  .landing-nav-links, .desktop-only-toggle {
+  /* Landing Header & Navigation Responsiveness */
+  .landing-nav-links, .desktop-header-auth {
     display: none !important;
   }
+  .mobile-menu-btn {
+    display: flex !important;
+  }
   .landing-header {
-    padding: 16px 20px !important;
+    width: calc(100% - 24px) !important;
+    margin: 12px auto 0 auto !important;
+    padding: 12px 16px !important;
   }
   .landing-title {
     font-size: 2.25rem !important;
+    line-height: 1.15 !important;
   }
   .landing-desc {
     font-size: 1rem !important;
-  }
-  .landing-ctas a {
-    padding: 12px 24px !important;
-    font-size: 0.9rem !important;
-  }
-  .features-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
   }
   .landing-footer-container {
     flex-direction: column !important;
@@ -414,6 +416,10 @@ button, input, select, textarea {
 }
 
 @media (max-width: 600px) {
+  .workflow-grid-4, .workflow-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
   .scene-block {
     flex-direction: column !important;
   }

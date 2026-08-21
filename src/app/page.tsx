@@ -7,7 +7,7 @@ import CyberCanvas3D from '@/components/CyberCanvas3D';
 import CyberTiltCard from '@/components/CyberTiltCard';
 import { 
   Sparkles, TrendingUp, ShieldCheck, Film, ArrowRight, Database, Settings, 
-  Cpu, GitMerge, BarChart2, CheckCircle2, ShieldAlert, Layers, Terminal, Activity, Zap, Play
+  Cpu, GitMerge, BarChart2, CheckCircle2, ShieldAlert, Layers, Terminal, Activity, Zap, Play, Menu, X
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -15,6 +15,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [activeChapter, setActiveChapter] = useState(1);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -112,7 +113,7 @@ export default function Home() {
           </a>
         </nav>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="desktop-header-auth">
           {isLoggedIn ? (
             <>
               <span className="cyber-badge" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>
@@ -134,7 +135,112 @@ export default function Home() {
           )}
           <ThemeToggle />
         </div>
+
+        {/* Mobile Hamburger & Theme Toggle Button Container */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="mobile-menu-btn">
+          <ThemeToggle />
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              padding: '8px',
+              backgroundColor: '#020204',
+              border: '2px solid var(--accent-primary)',
+              color: 'var(--accent-primary)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </header>
+
+      {/* Cyber Mobile Drawer Overlay Menu */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '70px',
+          left: '12px',
+          right: '12px',
+          backgroundColor: '#020204',
+          border: '3px solid var(--accent-primary)',
+          boxShadow: '6px 6px 0px #00f0ff',
+          borderRadius: 'var(--radius-md)',
+          padding: '24px',
+          zIndex: 99,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Link 
+              href="/blog" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontSize: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}
+            >
+              [BLOG INSIGHTS]
+            </Link>
+            <a 
+              href="#pricing" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontSize: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}
+            >
+              [PRICING TIERS]
+            </a>
+            <a 
+              href="#contact" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontSize: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}
+            >
+              [CONTACT US]
+            </a>
+          </nav>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '8px' }}>
+            {isLoggedIn ? (
+              <Link 
+                href="/dashboard" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="cyber-btn-primary" 
+                style={{ width: '100%', textAlign: 'center' }}
+              >
+                LAUNCH CREATOR STUDIO
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    padding: '12px',
+                    textAlign: 'center',
+                    border: '2px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  SIGN IN
+                </Link>
+                <Link 
+                  href="/signup" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="cyber-btn-primary" 
+                  style={{ width: '100%', textAlign: 'center' }}
+                >
+                  GET STARTED
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section style={{
