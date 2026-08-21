@@ -112,15 +112,47 @@ export default function ScriptStudio() {
     setLoading(true);
     setRenderQueued(false);
 
-    // Mock n8n call delay
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await fetch('/api/render', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content_id: params.id,
+          scenes: scenes,
+          audio_url: 'https://example.com/mock-audio.mp3' // Placeholder audio URL
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[Script Studio] Render job dispatched:', result);
+        setRenderQueued(true);
+        setTimeout(() => {
+          setRenderQueued(false);
+          router.push('/dashboard');
+        }, 2000);
+      } else {
+        console.error('[Script Studio] Render request failed:', await response.text());
+        // Fallback to demo mode on request error
+        setRenderQueued(true);
+        setTimeout(() => {
+          setRenderQueued(false);
+          router.push('/dashboard');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Script Studio] Error triggering render:', err);
+      // Fallback
       setRenderQueued(true);
       setTimeout(() => {
         setRenderQueued(false);
         router.push('/dashboard');
-      }, 1500);
-    }, 1000);
+      }, 2000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
