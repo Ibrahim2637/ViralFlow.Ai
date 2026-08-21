@@ -135,9 +135,50 @@ export default function CreatorDashboard() {
         }
       }
 
-      setTrends(trendsList);
-      setDrafts(contentIdeas);
-      setActiveDraft(contentIdeas[0] || null);
+      const finalTrends = trendsList.length > 0 ? trendsList : [
+        {
+          id: 'trend-1',
+          title: 'Cursor AI Composer vs GitHub Copilot Workspace',
+          topic: 'Developer Tools',
+          source: 'YouTube & GitHub Trends',
+          overall_score: 94,
+          momentum: 98,
+          fit: 95,
+          novelty: 90,
+          saturation: 35,
+          reason: 'Multi-file agentic code editing is breaking search records among developer creators this week.',
+          recommended: true
+        },
+        {
+          id: 'trend-2',
+          title: 'Local LLM Fine-Tuning with Ollama & DeepSeek-R1',
+          topic: 'Open Source AI',
+          source: 'Reddit r/LocalLLaMA',
+          overall_score: 89,
+          momentum: 91,
+          fit: 88,
+          novelty: 92,
+          saturation: 40,
+          reason: 'Massive surge in queries around running reasoning models locally on consumer GPUs.',
+          recommended: true
+        }
+      ];
+
+      const finalDrafts = contentIdeas.length > 0 ? contentIdeas : [
+        {
+          id: 'draft-demo-1',
+          title: 'Cursor AI vs Copilot Speed Test',
+          hook: 'Stop writing boilerplate code line-by-line in 2026. Here is how Cursor AI builds entire APIs in 90 seconds.',
+          status: 'ready' as const,
+          claimsCount: 3,
+          claimsVerified: 3,
+          platform: 'YouTube Shorts'
+        }
+      ];
+
+      setTrends(finalTrends);
+      setDrafts(finalDrafts);
+      setActiveDraft(finalDrafts[0] || null);
       
       // Seed fallback insights if none are generated yet
       setInsights([
@@ -148,6 +189,47 @@ export default function CreatorDashboard() {
 
     fetchData();
   }, []);
+
+  const [scanning, setScanning] = useState(false);
+
+  const handleScanTrends = async () => {
+    setScanning(true);
+    try {
+      const res = await fetch('/api/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemPrompt: 'You are an AI Viral Trend Finder for tech creators and developers.',
+          userMessage: 'Scan current trending developer topics and output JSON array of 2 trends: [{"title": "...", "topic": "AI Tools", "source": "GitHub Trends", "overall_score": 95, "momentum": 97, "fit": 92, "novelty": 94, "saturation": 25, "reason": "High search velocity", "recommended": true}]'
+        })
+      });
+      const data = await res.json();
+      if (data.result) {
+        const match = data.result.match(/\[[\s\S]*\]/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          const newTrends = parsed.map((t: any, i: number) => ({
+            id: `ai-dash-trend-${Date.now()}-${i}`,
+            title: t.title || 'Agentic AI Code Generation Frameworks',
+            topic: t.topic || 'Developer AI',
+            source: t.source || 'GitHub Trends',
+            overall_score: t.overall_score || 93,
+            momentum: t.momentum || 96,
+            fit: t.fit || 91,
+            novelty: t.novelty || 94,
+            saturation: t.saturation || 28,
+            reason: t.reason || 'High velocity keyword search growth across tech channels.',
+            recommended: true
+          }));
+          setTrends(prev => [...newTrends, ...prev]);
+        }
+      }
+    } catch (err) {
+      console.error('Scan trends failed:', err);
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const handleApprove = () => {
     setShowApprovalModal(true);
@@ -190,21 +272,26 @@ export default function CreatorDashboard() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-surface)',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: 500
-          }}>
-            <RefreshCw size={16} />
-            Scan Trends
+          <button 
+            onClick={handleScanTrends}
+            disabled={scanning}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--accent-primary)',
+              backgroundColor: scanning ? 'var(--bg-surface-hover)' : 'var(--accent-primary)',
+              color: scanning ? 'var(--accent-primary)' : '#000000',
+              cursor: scanning ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            <RefreshCw size={16} className={scanning ? 'spinner' : ''} />
+            {scanning ? 'Scanning AI...' : 'Scan Trends'}
           </button>
         </div>
       </div>
