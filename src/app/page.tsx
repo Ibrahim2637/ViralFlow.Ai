@@ -252,15 +252,15 @@ export default function Home() {
         zIndex: 10,
         position: 'relative'
       }}>
-        {/* Cyber-Brutalist Status Badge */}
+        {/* Brand Status Badge */}
         <div style={{ display: 'inline-block', marginBottom: '24px' }}>
           <div className="cyber-badge" style={{ fontSize: '0.8rem', padding: '6px 16px' }}>
             <Activity size={14} />
-            AUTONOMOUS CYBER-AGENTIC PIPELINE v2.5
+            AUTONOMOUS BRAND CONTENT PIPELINE v2.5
           </div>
         </div>
 
-        {/* Heavy Cyber Title */}
+        {/* Brand Headline */}
         <h1 style={{
           fontSize: '4.25rem',
           fontFamily: 'var(--font-heading)',
@@ -279,7 +279,7 @@ export default function Home() {
             border: '4px solid #ffffff',
             boxShadow: '4px 4px 0px #ccff00'
           }}>
-            CYBER 3D
+            VIRAL BRAND
           </span>{' '}
           CONTENT ENGINE
         </h1>
@@ -293,10 +293,10 @@ export default function Home() {
           margin: '0 auto 40px auto',
           fontFamily: 'var(--font-body)'
         }} className="landing-desc">
-          ViralFlow AI deploys specialized autonomous agent clusters that discover viral signals, script in your brand voice, audit claims, render 9:16 vertical MP4s, and learn closed-loop.
+          ViralFlow AI empowers your brand with autonomous AI agents that analyze real-time market trends, craft high-converting video scripts in your authentic brand voice, verify claims, render 9:16 vertical videos, and continuously learn to scale your audience reach.
         </p>
 
-        {/* Primary Cyber CTAs */}
+        {/* Primary CTAs */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '60px' }}>
           <Link href={isLoggedIn ? "/dashboard" : "/signup"} className="cyber-btn-primary" style={{ padding: '16px 36px', fontSize: '1.05rem' }}>
             LAUNCH CREATOR STUDIO
@@ -318,7 +318,7 @@ export default function Home() {
             gap: '8px'
           }}>
             <Play size={18} />
-            EXPLORE 3D PIPELINE
+            EXPLORE AGENTIC WORKFLOW
           </a>
         </div>
       </section>
