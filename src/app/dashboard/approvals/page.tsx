@@ -120,14 +120,14 @@ export default function ApprovalsPage() {
 
       {activeDraft ? (
         <div className="glass-panel approval-pane" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-          {/* 9:16 vertical player mockup */}
+          {/* 9:16 vertical video player */}
           <div style={{
             width: '100%',
             aspectRatio: '9/16',
             maxWidth: '260px',
             margin: '0 auto',
             borderRadius: 'var(--radius-lg)',
-            border: '10px solid #000000',
+            border: '8px solid #000000',
             backgroundColor: '#000000',
             position: 'relative',
             overflow: 'hidden',
@@ -142,48 +142,39 @@ export default function ApprovalsPage() {
                 <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
               </div>
             ) : (
-              <>
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <video
+                  src="/placeholder_avatar.mp4"
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
                 <div style={{
                   position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  cursor: 'pointer'
-                }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#000000'
-                  }}>
-                    <Play size={20} style={{ marginLeft: '4px' }} />
-                  </div>
-                </div>
-
-                <div style={{
-                  position: 'absolute',
-                  bottom: '24px',
-                  left: '16px',
-                  right: '16px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  bottom: '50px',
+                  left: '12px',
+                  right: '12px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
                   borderRadius: 'var(--radius-sm)',
-                  padding: '10px',
+                  padding: '8px 12px',
                   color: '#ffffff',
                   fontSize: '0.75rem',
                   textAlign: 'center',
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 600,
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  pointerEvents: 'none'
                 }}>
                   "{activeDraft.hook}"
                 </div>
-              </>
+              </div>
             )}
           </div>
 

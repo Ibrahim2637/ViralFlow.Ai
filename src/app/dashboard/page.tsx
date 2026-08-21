@@ -421,38 +421,28 @@ export default function CreatorDashboard() {
                       <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
                     </div>
                   ) : (
-                    <>
-                      {/* Play Overlay */}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                        cursor: 'pointer'
-                      }}>
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: 'var(--radius-full)',
-                          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#000000'
-                        }}>
-                          <Play size={20} style={{ marginLeft: '4px' }} />
-                        </div>
-                      </div>
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <video
+                        src="/placeholder_avatar.mp4"
+                        controls
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
 
                       {/* Video caption preview overlay */}
                       <div style={{
                         position: 'absolute',
-                        bottom: '20px',
+                        bottom: '50px',
                         left: '12px',
                         right: '12px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         borderRadius: 'var(--radius-sm)',
                         padding: '8px',
                         color: '#ffffff',
@@ -460,11 +450,12 @@ export default function CreatorDashboard() {
                         textAlign: 'center',
                         fontFamily: 'var(--font-heading)',
                         fontWeight: 600,
-                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        pointerEvents: 'none'
                       }}>
                         "{activeDraft.hook}"
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
 
