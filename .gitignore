@@ -30,15 +30,44 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Environment & secret files
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
 
-# vercel
+# API Keys, Service Account & Credentials JSON files
+service-account*.json
+google-credentials*.json
+firebase-adminsdk*.json
+credentials.json
+secrets.json
+*_key.json
+*_secret.json
+db-password*
+
+# Keys & Certificates
+*.pem
+*.key
+*.pkcs12
+*.p12
+*.pfx
+*.asc
+
+# Database dumps
+*.sql
+*.sqlite
+*.dump
+
+# Vercel & IDE
 .vercel
+.vscode/*
+!.vscode/settings.json
+.idea
 
-# typescript
+# Typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
-.env*
