@@ -15,6 +15,8 @@ export default function AutomationSettingsPage() {
   const [scanInterval, setScanInterval] = useState('30m');
   const [activeYouTubeAuth, setActiveYouTubeAuth] = useState(false);
   const [activeTikTokAuth, setActiveTikTokAuth] = useState(false);
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('http://localhost:5678/webhook/viralflow-generate');
+  const [useN8nEngine, setUseN8nEngine] = useState(true);
 
   useEffect(() => {
     setDbConfigured(isSupabaseConfigured());
@@ -32,6 +34,8 @@ export default function AutomationSettingsPage() {
             setScanInterval(settingsObj.scanInterval || '30m');
             setActiveYouTubeAuth(settingsObj.activeYouTubeAuth || false);
             setActiveTikTokAuth(settingsObj.activeTikTokAuth || false);
+            if (settingsObj.n8nWebhookUrl) setN8nWebhookUrl(settingsObj.n8nWebhookUrl);
+            if (settingsObj.useN8nEngine !== undefined) setUseN8nEngine(settingsObj.useN8nEngine);
           }
         } catch (e) {
           console.error(e);
@@ -51,7 +55,9 @@ export default function AutomationSettingsPage() {
       autoPublish,
       scanInterval,
       activeYouTubeAuth,
-      activeTikTokAuth
+      activeTikTokAuth,
+      n8nWebhookUrl,
+      useN8nEngine
     };
 
     if (!dbConfigured) {
@@ -208,6 +214,49 @@ export default function AutomationSettingsPage() {
                   <option value="1h">Every Hour</option>
                   <option value="12h">Twice Daily</option>
                 </select>
+              </div>
+
+              {/* n8n Webhook Integration Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-primary)' }}>⚡ Live n8n Agent Pipeline Engine</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dispatch trend scanning, script writing, and video rendering directly to your n8n instance.</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={useN8nEngine}
+                    onChange={(e) => setUseN8nEngine(e.target.checked)}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {useN8nEngine && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      n8n Webhook Endpoint URL (viralflow-generate)
+                    </label>
+                    <input
+                      type="text"
+                      value={n8nWebhookUrl}
+                      onChange={(e) => setN8nWebhookUrl(e.target.value)}
+                      placeholder="http://localhost:5678/webhook/viralflow-generate"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--accent-primary)',
+                        backgroundColor: 'var(--bg-base)',
+                        color: 'var(--text-primary)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.85rem'
+                      }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      Default: <code>http://localhost:5678/webhook/viralflow-generate</code> or your production n8n URL.
+                    </span>
+                  </div>
+                )}
               </div>
 
             </div>

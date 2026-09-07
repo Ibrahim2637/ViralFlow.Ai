@@ -25,3 +25,8 @@ export const GEMINI_API_KEY =
   decodeKey('QVEuQWI4Uk42S2hVRTlPbnBvNE13djd2RDFDMHRSWjAyZnpKY3VFaFB3X1hzSVFOV2xR');
 
 export const HIGH_QUALITY = true;
+
+export const N8N_WEBHOOK_URL =
+  process.env.N8N_WEBHOOK_URL ||
+  process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ||
+  'http://localhost:5678/webhook/viralflow-generate';
