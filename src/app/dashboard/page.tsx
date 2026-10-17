@@ -8,6 +8,7 @@ import {
   Sparkles, TrendingUp, ShieldAlert, CheckCircle, Clock, Check, X, Play, RefreshCw, BarChart2, Eye, Heart, MessageSquare, Film, PlusCircle, ExternalLink
 } from 'lucide-react';
 import { getStoredDrafts, saveStoredDraft, getActiveDraft, setActiveDraftId, RenderedDraft } from '@/lib/videoState';
+import MotionGraphicsPlayer from '@/components/MotionGraphicsPlayer';
 
 interface Trend {
   id: string;
@@ -34,6 +35,8 @@ interface Draft {
   platform: string;
   video_url?: string;
   storyboard?: any[];
+  assets_used?: any[];
+  render_manifest?: any;
   qa_score?: number;
 }
 
@@ -75,6 +78,8 @@ export default function CreatorDashboard() {
           video_url: videoUrl,
           qa_score: data.n8n_response?.quality_report?.editorial_scorecard?.overall_qa_score || t.overall_score || 94,
           storyboard: data.storyboard,
+          assets_used: data.assets_used || data.n8n_response?.assets_used,
+          render_manifest: data.render_manifest || data.n8n_response?.render_manifest,
           created_at: new Date().toISOString()
         };
         saveStoredDraft(newDraft);
@@ -88,7 +93,9 @@ export default function CreatorDashboard() {
           platform: 'YouTube Shorts',
           video_url: videoUrl,
           qa_score: newDraft.qa_score,
-          storyboard: newDraft.storyboard
+          storyboard: newDraft.storyboard,
+          assets_used: newDraft.assets_used,
+          render_manifest: newDraft.render_manifest
         };
         setDrafts(prev => [mappedDraft, ...prev]);
         setActiveDraft(mappedDraft);
@@ -127,6 +134,8 @@ export default function CreatorDashboard() {
           video_url: videoUrl,
           qa_score: pkg?.quality_report?.editorial_scorecard?.overall_qa_score || 95,
           storyboard: pkg?.storyboard,
+          assets_used: pkg?.assets_used,
+          render_manifest: pkg?.render_manifest,
           created_at: new Date().toISOString()
         };
         saveStoredDraft(newDraft);
@@ -140,7 +149,9 @@ export default function CreatorDashboard() {
           platform: 'YouTube Shorts',
           video_url: videoUrl,
           qa_score: newDraft.qa_score,
-          storyboard: newDraft.storyboard
+          storyboard: newDraft.storyboard,
+          assets_used: newDraft.assets_used,
+          render_manifest: newDraft.render_manifest
         };
         setDrafts(prev => [mappedDraft, ...prev]);
         setActiveDraft(mappedDraft);
@@ -289,6 +300,8 @@ export default function CreatorDashboard() {
           platform: ld.platform || 'YouTube Shorts',
           video_url: ld.video_url,
           storyboard: ld.storyboard,
+          assets_used: ld.assets_used,
+          render_manifest: ld.render_manifest,
           qa_score: ld.qa_score
         }));
       }
@@ -618,83 +631,29 @@ export default function CreatorDashboard() {
 
             {activeDraft ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }} className="approval-pane">
-                {/* 9:16 Phone Preview Mockup */}
-                <div style={{
-                  width: '100%',
-                  aspectRatio: '9/16',
-                  maxWidth: '240px',
-                  margin: '0 auto',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '8px solid #000000',
-                  backgroundColor: '#000000',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--shadow-lg)'
-                }}>
-                  {activeDraft.status === 'rendering' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#ffffff' }}>
-                      <RefreshCw className="spinner" size={32} />
-                      <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
-                    </div>
-                  ) : (
-                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                      <video
-                        key={activeDraft.video_url || activeDraft.id}
-                        src={activeDraft.video_url || "/placeholder_avatar.mp4"}
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-
-                      {/* Live n8n badge */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '10px',
-                        backgroundColor: 'rgba(0,0,0,0.7)',
-                        backdropFilter: 'blur(4px)',
-                        padding: '3px 6px',
-                        borderRadius: '3px',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        color: '#00F0FF',
-                        border: '1px solid rgba(0,240,255,0.4)',
-                        pointerEvents: 'none'
-                      }}>
-                        ● LIVE N8N RENDER
-                      </div>
-
-                      {/* Video caption preview overlay */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '50px',
-                        left: '12px',
-                        right: '12px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '8px',
-                        color: '#FFFF00',
-                        fontSize: '0.75rem',
-                        textAlign: 'center',
-                        fontFamily: 'var(--font-heading)',
-                        fontWeight: 800,
-                        border: '1px solid rgba(255, 255, 0, 0.4)',
-                        pointerEvents: 'none'
-                      }}>
-                        "{activeDraft.hook}"
-                      </div>
-                    </div>
-                  )}
+                {/* 9:16 Vertical Motion Graphics Player */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <MotionGraphicsPlayer
+                    videoUrl={activeDraft.video_url}
+                    storyboard={activeDraft.storyboard}
+                    assetsUsed={activeDraft.assets_used}
+                    renderManifest={activeDraft.render_manifest}
+                    hook={activeDraft.hook}
+                    title={activeDraft.title}
+                    maxWidth="240px"
+                  />
+                  <Link
+                    href="/dashboard/approvals"
+                    style={{
+                      textAlign: 'center',
+                      fontSize: '0.72rem',
+                      color: 'var(--accent-primary)',
+                      textDecoration: 'underline',
+                      marginTop: '4px'
+                    }}
+                  >
+                    Open Storyboard & Full Approvals ↗
+                  </Link>
                 </div>
 
                 {/* Details & Actions Pane */}

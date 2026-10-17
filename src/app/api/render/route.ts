@@ -48,7 +48,9 @@ export async function POST(request: Request) {
           status: 'ready',
           video_url: videoUrl,
           storyboard: n8nData.storyboard,
+          assets_used: n8nData.assets_used,
           render_manifest: n8nData.render_manifest,
+          quality_report: n8nData.quality_report,
           n8n_response: n8nData,
           message: 'Video production package successfully generated and delivered by n8n.'
         });

@@ -8,6 +8,7 @@ export interface RenderedDraft {
   video_url: string;
   scenesCount?: number;
   storyboard?: any[];
+  assets_used?: { scene?: number; source?: string; author?: string; preview_link: string }[];
   render_manifest?: any;
   qa_score?: number;
   claimsCount?: number;

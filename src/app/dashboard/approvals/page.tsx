@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Film, Play, Check, X, Clock, AlertCircle, Sparkles, Layers, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getStoredDrafts, saveStoredDraft, getActiveDraft, setActiveDraftId, RenderedDraft } from '@/lib/videoState';
+import MotionGraphicsPlayer from '@/components/MotionGraphicsPlayer';
 
 export default function ApprovalsPage() {
   const [drafts, setDrafts] = useState<RenderedDraft[]>([]);
@@ -197,86 +198,17 @@ export default function ApprovalsPage() {
       {activeDraft ? (
         <div className="glass-panel approval-pane" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '320px 1fr', gap: '32px' }}>
           
-          {/* 9:16 vertical video player */}
+          {/* 9:16 vertical motion graphics video player */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{
-              width: '100%',
-              aspectRatio: '9/16',
-              maxWidth: '300px',
-              margin: '0 auto',
-              borderRadius: 'var(--radius-lg)',
-              border: '6px solid #1a1a1a',
-              backgroundColor: '#000000',
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
-            }}>
-              {activeDraft.status === 'rendering' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#ffffff' }}>
-                  <span className="spinner" style={{ width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', borderRadius: '50%' }} />
-                  <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
-                </div>
-              ) : (
-                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                  <video
-                    key={activeDraft.video_url || activeDraft.id}
-                    src={activeDraft.video_url || "/placeholder_avatar.mp4"}
-                    controls
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-
-                  {/* Badges Overlay */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(4px)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    color: '#00F0FF',
-                    border: '1px solid rgba(0,240,255,0.4)',
-                    pointerEvents: 'none'
-                  }}>
-                    ● LIVE N8N RENDER
-                  </div>
-
-                  {/* Video Caption Hook */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '50px',
-                    left: '12px',
-                    right: '12px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '8px 12px',
-                    color: '#FFFF00',
-                    fontSize: '0.75rem',
-                    textAlign: 'center',
-                    fontFamily: 'var(--font-heading)',
-                    fontWeight: 800,
-                    border: '1px solid rgba(255, 255, 0, 0.4)',
-                    pointerEvents: 'none',
-                    letterSpacing: '0.5px'
-                  }}>
-                    "{activeDraft.hook}"
-                  </div>
-                </div>
-              )}
-            </div>
+            <MotionGraphicsPlayer
+              videoUrl={activeDraft.video_url}
+              storyboard={activeDraft.storyboard}
+              assetsUsed={activeDraft.assets_used}
+              renderManifest={activeDraft.render_manifest}
+              hook={activeDraft.hook}
+              title={activeDraft.title}
+              maxWidth="300px"
+            />
 
             {/* Direct video link button */}
             {activeDraft.video_url && activeDraft.video_url.startsWith('http') && (
