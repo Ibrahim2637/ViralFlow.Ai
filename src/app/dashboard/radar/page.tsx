@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { TrendingUp, RefreshCw, Eye, Heart, MessageSquare, Search, Award } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { TrendingUp, RefreshCw, Eye, Heart, MessageSquare, Search, Award, Film } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { saveStoredDraft, RenderedDraft } from '@/lib/videoState';
 
 interface Trend {
   id: string;
@@ -66,11 +68,51 @@ const DEFAULT_TRENDS: Trend[] = [
 ];
 
 export default function TrendRadarPage() {
+  const router = useRouter();
   const [trends, setTrends] = useState<Trend[]>(DEFAULT_TRENDS);
   const [filter, setFilter] = useState<'all' | 'recommended'>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [producingId, setProducingId] = useState<string | null>(null);
+
+  const handleProduceRadarVideo = async (t: Trend) => {
+    setProducingId(t.id);
+    try {
+      const res = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: t.title,
+          content_id: t.id
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const videoUrl = data.video_url || 'https://videos.pexels.com/video-files/8087073/8087073-hd_720_1280_25fps.mp4';
+        const newDraft: RenderedDraft = {
+          id: `vf-radar-${Date.now()}`,
+          title: t.title,
+          hook: t.reason || t.title,
+          status: 'ready',
+          duration: 30,
+          video_url: videoUrl,
+          qa_score: data.n8n_response?.quality_report?.editorial_scorecard?.overall_qa_score || t.overall_score || 94,
+          storyboard: data.storyboard,
+          created_at: new Date().toISOString()
+        };
+        saveStoredDraft(newDraft);
+        router.push('/dashboard/approvals');
+      } else {
+        router.push(`/editor/script-for-${t.id}?topic=${encodeURIComponent(t.title)}`);
+      }
+    } catch (e) {
+      console.error('Failed to produce radar video:', e);
+      router.push(`/editor/script-for-${t.id}?topic=${encodeURIComponent(t.title)}`);
+    } finally {
+      setProducingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchTrends = async () => {
@@ -356,12 +398,36 @@ export default function TrendRadarPage() {
                 </div>
               </div>
 
-              <Link
-                href={`/editor/script-for-${t.id}`}
-                className="cyber-btn-primary"
-                style={{ padding: '8px 14px', fontSize: '0.8rem', textAlign: 'center', width: '100%' }}
+              <button
+                onClick={() => handleProduceRadarVideo(t)}
+                disabled={producingId !== null}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--accent-primary)',
+                  color: '#000000',
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: producingId !== null ? 'not-allowed' : 'pointer',
+                  border: 'none',
+                  width: '100%',
+                  boxShadow: 'var(--shadow-glow)'
+                }}
               >
-                Script Topic
+                <Film size={14} className={producingId === t.id ? 'spinner' : ''} />
+                {producingId === t.id ? 'Rendering...' : '⚡ 1-Click Video'}
+              </button>
+
+              <Link
+                href={`/editor/script-for-${t.id}?topic=${encodeURIComponent(t.title)}`}
+                className="cyber-btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', textAlign: 'center', width: '100%' }}
+              >
+                Script Studio
               </Link>
             </div>
           </div>

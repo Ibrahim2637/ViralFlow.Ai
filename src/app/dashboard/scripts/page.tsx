@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Film, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Film, Clock, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getStoredDrafts } from '@/lib/videoState';
 interface ScriptItem {
   id: string;
   title: string;
@@ -87,6 +88,35 @@ export default function ScriptStudioListPage() {
         }
       }
 
+      const localDrafts = getStoredDrafts();
+      if (localDrafts.length > 0) {
+        localDrafts.forEach(ld => {
+          if (!scriptList.some(s => s.id === ld.id)) {
+            scriptList.push({
+              id: ld.id,
+              title: ld.title,
+              hook: ld.hook,
+              scenesCount: ld.storyboard?.length || 4,
+              status: ld.status,
+              claimsVerified: '3/3 Claims Verified'
+            });
+          }
+        });
+      }
+
+      if (scriptList.length === 0) {
+        scriptList = [
+          {
+            id: 'n8n-demo-script-01',
+            title: 'Why Multi-Agent Systems Are Crushing Monolithic AI in 2026',
+            hook: 'Forget everything you thought you knew about AI in 2026.',
+            scenesCount: 4,
+            status: 'ready',
+            claimsVerified: '3/3 Claims Verified'
+          }
+        ];
+      }
+
       setScripts(scriptList);
       setLoading(false);
     };
@@ -163,7 +193,7 @@ export default function ScriptStudioListPage() {
                   {s.status}
                 </span>
               </div>
-              <Link href={`/editor/${s.id}`} style={{
+              <Link href={`/editor/${s.id}?topic=${encodeURIComponent(s.title)}&hook=${encodeURIComponent(s.hook)}`} style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',

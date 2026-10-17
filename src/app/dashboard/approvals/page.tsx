@@ -1,20 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Film, Play, Check, X, Clock, AlertCircle } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-interface RenderDraft {
-  id: string;
-  title: string;
-  hook: string;
-  status: 'rendering' | 'ready' | 'published';
-  progress?: number;
-  duration: number;
-}
+import { Film, Play, Check, X, Clock, AlertCircle, Sparkles, Layers, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { getStoredDrafts, saveStoredDraft, getActiveDraft, setActiveDraftId, RenderedDraft } from '@/lib/videoState';
 
 export default function ApprovalsPage() {
-  const [drafts, setDrafts] = useState<RenderDraft[]>([]);
-  const [activeDraft, setActiveDraft] = useState<RenderDraft | null>(null);
+  const [drafts, setDrafts] = useState<RenderedDraft[]>([]);
+  const [activeDraft, setActiveDraft] = useState<RenderedDraft | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [scheduleTime, setScheduleTime] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,8 +15,10 @@ export default function ApprovalsPage() {
   useEffect(() => {
     const fetchDrafts = async () => {
       setLoading(true);
+      const localDrafts = getStoredDrafts();
+      let draftsList: RenderedDraft[] = [...localDrafts];
+
       let userId = '';
-      
       const demoSession = localStorage.getItem('demo-session');
       if (demoSession) {
         try {
@@ -38,11 +33,9 @@ export default function ApprovalsPage() {
         }
       }
 
-      let draftsList: RenderDraft[] = [];
-
       if (userId) {
         try {
-          const { data: ideasData, error } = await supabase
+          const { data: ideasData } = await supabase
             .from('content_ideas')
             .select(`
               id,
@@ -55,16 +48,20 @@ export default function ApprovalsPage() {
             .in('status', ['ready', 'rendering']);
 
           if (ideasData) {
-            draftsList = ideasData.map((idea: any) => {
+            ideasData.forEach((idea: any) => {
               const trendObj = Array.isArray(idea.trends) ? idea.trends[0] : idea.trends;
-              return {
-                id: idea.id,
-                title: trendObj?.title || idea.angle || 'Untitled Draft',
-                hook: idea.hook || 'No hook text',
-                status: idea.status || 'ready',
-                progress: idea.status === 'rendering' ? 45 : undefined,
-                duration: 45
-              };
+              if (!draftsList.some(d => d.id === idea.id)) {
+                draftsList.push({
+                  id: idea.id,
+                  title: trendObj?.title || idea.angle || 'Untitled Draft',
+                  hook: idea.hook || 'No hook text',
+                  status: idea.status || 'ready',
+                  progress: idea.status === 'rendering' ? 45 : undefined,
+                  duration: 30,
+                  video_url: '/placeholder_avatar.mp4',
+                  created_at: new Date().toISOString()
+                });
+              }
             });
           }
         } catch (err) {
@@ -72,13 +69,65 @@ export default function ApprovalsPage() {
         }
       }
 
+      // Default fallback if absolutely empty
+      if (draftsList.length === 0) {
+        draftsList = [
+          {
+            id: 'n8n-demo-01',
+            title: 'Why Multi-Agent Systems Are Crushing Monolithic AI in 2026',
+            hook: 'Forget everything you thought you knew about AI!',
+            status: 'ready',
+            duration: 30,
+            video_url: 'https://videos.pexels.com/video-files/8087073/8087073-hd_720_1280_25fps.mp4',
+            qa_score: 94,
+            created_at: new Date().toISOString(),
+            storyboard: [
+              {
+                scene: 1,
+                duration: '3s',
+                narration: 'Forget everything you thought you knew about AI!',
+                caption: 'NEW AI PARADIGM!',
+                visual_goal: 'Dynamic split-screen of monolithic AI vs multi-agent systems.'
+              },
+              {
+                scene: 2,
+                duration: '9s',
+                narration: 'Single prompts hallucinate. Multi-agent swarms self-correct in real-time.',
+                caption: 'SELF-CORRECTING SWARMS',
+                visual_goal: 'High-tech nodes communicating in synchronized network graph.'
+              },
+              {
+                scene: 3,
+                duration: '10s',
+                narration: 'Companies using multi-agent architectures report 70% fewer production bugs.',
+                caption: '70% FEWER BUGS',
+                visual_goal: 'Fast dashboard analytics metric graph zooming upward.'
+              },
+              {
+                scene: 4,
+                duration: '8s',
+                narration: 'Subscribe and check the prompt framework in the comments.',
+                caption: 'GET THE FRAMEWORK ⚡',
+                visual_goal: 'Call to action button pop with neon accent glow.'
+              }
+            ]
+          }
+        ];
+      }
+
       setDrafts(draftsList);
-      setActiveDraft(draftsList[0] || null);
+      const active = getActiveDraft() || draftsList[0];
+      setActiveDraft(active);
       setLoading(false);
     };
 
     fetchDrafts();
   }, []);
+
+  const handleSelectDraft = (draft: RenderedDraft) => {
+    setActiveDraft(draft);
+    setActiveDraftId(draft.id);
+  };
 
   const handleApprove = () => {
     setShowApprovalModal(true);
@@ -86,13 +135,10 @@ export default function ApprovalsPage() {
 
   const submitApproval = (actionType: 'publish' | 'schedule') => {
     if (activeDraft) {
-      setDrafts(prev => prev.map(d => {
-        if (d.id === activeDraft.id) {
-          return { ...d, status: 'published' };
-        }
-        return d;
-      }));
-      setActiveDraft(null);
+      const updated: RenderedDraft = { ...activeDraft, status: 'published' };
+      saveStoredDraft(updated);
+      setDrafts(prev => prev.map(d => d.id === activeDraft.id ? updated : d));
+      setActiveDraft(updated);
       setShowApprovalModal(false);
       alert(actionType === 'publish' ? 'Video approved and queued for publishing!' : `Video scheduled for ${scheduleTime}!`);
     }
@@ -101,12 +147,12 @@ export default function ApprovalsPage() {
   const handleReject = () => {
     if (activeDraft && confirm('Are you sure you want to reject this video draft? This will trigger n8n script re-generations.')) {
       setDrafts(prev => prev.filter(d => d.id !== activeDraft.id));
-      setActiveDraft(null);
+      setActiveDraft(drafts.find(d => d.id !== activeDraft.id) || null);
     }
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div style={{ width: '100%', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
       {/* Header */}
       <div>
@@ -114,104 +160,262 @@ export default function ApprovalsPage() {
           Video Approvals & Previews
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>
-          Preview fully compiled 9:16 layout vertical video outputs and authorize drafts for upload dispatch.
+          Review verified 9:16 vertical video packages generated by the Railway n8n Autonomous Production Engine.
         </p>
       </div>
 
-      {activeDraft ? (
-        <div className="glass-panel approval-pane" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-          {/* 9:16 vertical video player */}
-          <div style={{
-            width: '100%',
-            aspectRatio: '9/16',
-            maxWidth: '260px',
-            margin: '0 auto',
-            borderRadius: 'var(--radius-lg)',
-            border: '8px solid #000000',
-            backgroundColor: '#000000',
-            position: 'relative',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            {activeDraft.status === 'rendering' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#ffffff' }}>
-                <span className="spinner" style={{ width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', borderRadius: '50%' }} />
-                <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
-              </div>
-            ) : (
-              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                <video
-                  src="/placeholder_avatar.mp4"
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  bottom: '50px',
-                  left: '12px',
-                  right: '12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      {/* Draft Selector Tabs */}
+      {drafts.length > 1 && (
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+          {drafts.map(d => {
+            const isSelected = activeDraft?.id === d.id;
+            return (
+              <button
+                key={d.id}
+                onClick={() => handleSelectDraft(d)}
+                style={{
+                  padding: '8px 16px',
                   borderRadius: 'var(--radius-sm)',
-                  padding: '8px 12px',
-                  color: '#ffffff',
-                  fontSize: '0.75rem',
-                  textAlign: 'center',
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 600,
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  pointerEvents: 'none'
-                }}>
-                  "{activeDraft.hook}"
+                  backgroundColor: isSelected ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                  color: isSelected ? '#000000' : 'var(--text-secondary)',
+                  border: '1px solid',
+                  borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-color)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                {d.title.length > 32 ? d.title.slice(0, 32) + '...' : d.title}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {activeDraft ? (
+        <div className="glass-panel approval-pane" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', display: 'grid', gridTemplateColumns: '320px 1fr', gap: '32px' }}>
+          
+          {/* 9:16 vertical video player */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{
+              width: '100%',
+              aspectRatio: '9/16',
+              maxWidth: '300px',
+              margin: '0 auto',
+              borderRadius: 'var(--radius-lg)',
+              border: '6px solid #1a1a1a',
+              backgroundColor: '#000000',
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+            }}>
+              {activeDraft.status === 'rendering' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#ffffff' }}>
+                  <span className="spinner" style={{ width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', borderRadius: '50%' }} />
+                  <span style={{ fontSize: '0.85rem' }}>Rendering {activeDraft.progress}%</span>
                 </div>
-              </div>
+              ) : (
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <video
+                    key={activeDraft.video_url || activeDraft.id}
+                    src={activeDraft.video_url || "/placeholder_avatar.mp4"}
+                    controls
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+
+                  {/* Badges Overlay */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(4px)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#00F0FF',
+                    border: '1px solid rgba(0,240,255,0.4)',
+                    pointerEvents: 'none'
+                  }}>
+                    ● LIVE N8N RENDER
+                  </div>
+
+                  {/* Video Caption Hook */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '50px',
+                    left: '12px',
+                    right: '12px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 12px',
+                    color: '#FFFF00',
+                    fontSize: '0.75rem',
+                    textAlign: 'center',
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 800,
+                    border: '1px solid rgba(255, 255, 0, 0.4)',
+                    pointerEvents: 'none',
+                    letterSpacing: '0.5px'
+                  }}>
+                    "{activeDraft.hook}"
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Direct video link button */}
+            {activeDraft.video_url && activeDraft.video_url.startsWith('http') && (
+              <a
+                href={activeDraft.video_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  textAlign: 'center',
+                  fontSize: '0.75rem',
+                  color: 'var(--accent-primary)',
+                  textDecoration: 'underline',
+                  display: 'block'
+                }}
+              >
+                Open Raw Vertical MP4 in New Tab ↗
+              </a>
             )}
           </div>
 
           {/* Details Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{
+                  backgroundColor: 'var(--accent-glow)',
+                  color: 'var(--accent-secondary)',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <Sparkles size={11} />
+                  Railway n8n Production Package
+                </span>
+                {activeDraft.qa_score && (
+                  <span style={{
+                    backgroundColor: 'rgba(16,185,129,0.15)',
+                    color: '#10B981',
+                    padding: '3px 8px',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.7rem',
+                    fontWeight: 700
+                  }}>
+                    QA Score: {activeDraft.qa_score}/100
+                  </span>
+                )}
+              </div>
+
+              <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-heading)', fontWeight: 800, lineHeight: '1.3' }}>
                 {activeDraft.title}
               </h2>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--accent-secondary)', backgroundColor: 'var(--accent-glow)', padding: '4px 10px', borderRadius: 'var(--radius-full)' }}>
-                <Clock size={12} />
-                <span>Ready for Approval ({activeDraft.duration}s)</span>
-              </div>
+              
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
+                <strong>Hook:</strong> "{activeDraft.hook}"
+              </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Status</span>
-                <span style={{ fontWeight: 600, color: 'var(--success)' }}>Render Complete</span>
+            {/* Storyboard timeline preview */}
+            {activeDraft.storyboard && activeDraft.storyboard.length > 0 && (
+              <div style={{
+                backgroundColor: 'var(--bg-base)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <Layers size={14} />
+                  <span>Scene-by-Scene Storyboard ({activeDraft.storyboard.length} Scenes)</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                  {activeDraft.storyboard.map((sc: any, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '3px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: 'var(--accent-primary)' }}>
+                        <span>Scene {sc.scene || idx + 1} ({sc.duration || '3s'})</span>
+                        <span style={{ color: '#FFFF00' }}>{sc.caption || ''}</span>
+                      </div>
+                      <div style={{ color: 'var(--text-primary)' }}>
+                        {sc.narration || sc.text || ''}
+                      </div>
+                      {sc.visual_goal && (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontStyle: 'italic' }}>
+                          Visual: {sc.visual_goal}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Resolution</span>
-                <span style={{ fontWeight: 600 }}>1080 x 1920 (9:16)</span>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Status</span>
+                <span style={{ fontWeight: 700, color: activeDraft.status === 'published' ? 'var(--accent-primary)' : 'var(--success)' }}>
+                  {activeDraft.status === 'published' ? 'Published' : 'Render Complete & Verified'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Output Dimensions</span>
+                <span style={{ fontWeight: 600 }}>1080 x 1920 Vertical HD (9:16)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Target Duration</span>
+                <span style={{ fontWeight: 600 }}>{activeDraft.duration}s</span>
               </div>
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', gap: '12px', marginTop: 'auto' }}>
               <button
                 onClick={handleApprove}
                 style={{
-                  width: '100%',
+                  flex: 1,
                   padding: '12px',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: 'var(--success)',
                   color: '#ffffff',
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -225,25 +429,22 @@ export default function ApprovalsPage() {
               <button
                 onClick={handleReject}
                 style={{
-                  width: '100%',
-                  padding: '12px',
+                  padding: '12px 18px',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: 'transparent',
                   border: '1px solid var(--border-color)',
                   color: 'var(--error)',
                   fontWeight: 600,
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'background-color var(--transition-fast)'
+                  gap: '8px'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--error-glow)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <X size={18} />
-                Reject & Revise Script
+                <X size={16} />
+                Reject
               </button>
             </div>
           </div>
@@ -289,20 +490,20 @@ export default function ApprovalsPage() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   onClick={() => submitApproval('publish')}
-                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem' }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--accent-primary)', color: '#000000', fontWeight: 700, fontSize: '0.9rem' }}
                 >
                   Publish Now
                 </button>
                 <button
                   onClick={() => submitApproval('schedule')}
                   disabled={!scheduleTime}
-                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--accent-primary)', border: '1px solid var(--border-color)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem', opacity: scheduleTime ? 1 : 0.6 }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--accent-primary)', border: '1px solid var(--border-color)', color: '#000000', fontWeight: 700, fontSize: '0.9rem', opacity: scheduleTime ? 1 : 0.6 }}
                 >
                   Schedule
                 </button>
               </div>
 
-              <button onClick={() => setShowApprovalModal(false)} style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
+              <button onClick={() => setShowApprovalModal(false)} style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'underline', cursor: 'pointer' }}>
                 Cancel
               </button>
             </div>

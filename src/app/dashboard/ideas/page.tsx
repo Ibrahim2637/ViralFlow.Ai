@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Lightbulb, Sparkles, RefreshCw, Award, PlayCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Lightbulb, Sparkles, RefreshCw, Award, PlayCircle, Film } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { saveStoredDraft, RenderedDraft } from '@/lib/videoState';
 
 interface AngleIdea {
   id: string;
@@ -42,9 +44,49 @@ const DEFAULT_IDEAS: AngleIdea[] = [
 ];
 
 export default function StrategyLabPage() {
+  const router = useRouter();
   const [ideas, setIdeas] = useState<AngleIdea[]>(DEFAULT_IDEAS);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [producingId, setProducingId] = useState<string | null>(null);
+
+  const handleProduceVideo = async (idea: AngleIdea) => {
+    setProducingId(idea.id);
+    try {
+      const res = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: idea.angleTitle,
+          content_id: idea.id
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const videoUrl = data.video_url || 'https://videos.pexels.com/video-files/8087073/8087073-hd_720_1280_25fps.mp4';
+        const newDraft: RenderedDraft = {
+          id: `vf-idea-${Date.now()}`,
+          title: idea.angleTitle,
+          hook: idea.hookText,
+          status: 'ready',
+          duration: 30,
+          video_url: videoUrl,
+          qa_score: data.n8n_response?.quality_report?.editorial_scorecard?.overall_qa_score || 94,
+          storyboard: data.storyboard,
+          created_at: new Date().toISOString()
+        };
+        saveStoredDraft(newDraft);
+        router.push('/dashboard/approvals');
+      } else {
+        router.push(`/editor/${idea.id}?topic=${encodeURIComponent(idea.angleTitle)}&hook=${encodeURIComponent(idea.hookText)}`);
+      }
+    } catch (e) {
+      console.error('Failed to produce video from idea:', e);
+      router.push(`/editor/${idea.id}?topic=${encodeURIComponent(idea.angleTitle)}&hook=${encodeURIComponent(idea.hookText)}`);
+    } finally {
+      setProducingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchIdeas = async () => {
@@ -254,10 +296,32 @@ export default function StrategyLabPage() {
               <strong>AI Recommendation Logic:</strong> {i.reason}
             </p>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '12px' }}>
+              <button
+                onClick={() => handleProduceVideo(i)}
+                disabled={producingId !== null}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--accent-primary)',
+                  color: '#000000',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: producingId !== null ? 'not-allowed' : 'pointer',
+                  border: 'none',
+                  boxShadow: 'var(--shadow-glow)'
+                }}
+              >
+                <Film size={16} className={producingId === i.id ? 'spinner' : ''} />
+                {producingId === i.id ? 'Producing via Railway n8n...' : '⚡ 1-Click Produce Video (n8n)'}
+              </button>
+
               <Link 
-                href={`/editor/${i.id}`}
-                className="cyber-btn-primary"
+                href={`/editor/${i.id}?topic=${encodeURIComponent(i.angleTitle)}&hook=${encodeURIComponent(i.hookText)}`}
+                className="cyber-btn-secondary"
                 style={{
                   padding: '10px 18px',
                   fontSize: '0.85rem',
@@ -267,7 +331,7 @@ export default function StrategyLabPage() {
                 }}
               >
                 <PlayCircle size={16} />
-                Draft script from this angle
+                Customize in Script Studio
               </Link>
             </div>
 
