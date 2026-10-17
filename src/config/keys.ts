@@ -29,4 +29,4 @@ export const HIGH_QUALITY = true;
 export const N8N_WEBHOOK_URL =
   process.env.N8N_WEBHOOK_URL ||
   process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ||
-  'http://localhost:5678/webhook/viralflow-generate';
+  'https://primary-production-675a3.up.railway.app/webhook/viralflow-produce';

@@ -15,7 +15,7 @@ export default function AutomationSettingsPage() {
   const [scanInterval, setScanInterval] = useState('30m');
   const [activeYouTubeAuth, setActiveYouTubeAuth] = useState(false);
   const [activeTikTokAuth, setActiveTikTokAuth] = useState(false);
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('http://localhost:5678/webhook/viralflow-generate');
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('https://primary-production-675a3.up.railway.app/webhook/viralflow-produce');
   const [useN8nEngine, setUseN8nEngine] = useState(true);
 
   useEffect(() => {
@@ -234,13 +234,13 @@ export default function AutomationSettingsPage() {
                 {useN8nEngine && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                     <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      n8n Webhook Endpoint URL (viralflow-generate)
+                      n8n Production Webhook URL (viralflow-produce)
                     </label>
                     <input
                       type="text"
                       value={n8nWebhookUrl}
                       onChange={(e) => setN8nWebhookUrl(e.target.value)}
-                      placeholder="http://localhost:5678/webhook/viralflow-generate"
+                      placeholder="https://primary-production-675a3.up.railway.app/webhook/viralflow-produce"
                       style={{
                         width: '100%',
                         padding: '10px 12px',
@@ -253,7 +253,7 @@ export default function AutomationSettingsPage() {
                       }}
                     />
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Default: <code>http://localhost:5678/webhook/viralflow-generate</code> or your production n8n URL.
+                      Default: <code>https://primary-production-675a3.up.railway.app/webhook/viralflow-produce</code>
                     </span>
                   </div>
                 )}

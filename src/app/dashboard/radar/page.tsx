@@ -140,33 +140,39 @@ export default function TrendRadarPage() {
   const handleScanTrends = async () => {
     setScanning(true);
     try {
-      // First attempt n8n webhook workflow
+      // First attempt live Railway n8n webhook workflow
       const n8nRes = await fetch('/api/n8n/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: 'discover AI tools and trending tech' }),
-        signal: AbortSignal.timeout(15000)
+        body: JSON.stringify({
+          mode: 'discover',
+          target_duration: 30,
+          audience: 'Tech builders and creators'
+        }),
+        signal: AbortSignal.timeout(20000)
       }).catch(() => null);
 
       if (n8nRes && n8nRes.ok) {
         const data = await n8nRes.json();
-        const pkg = data.content_package;
-        if (pkg && (pkg.opportunity || pkg.script)) {
-          const opp = pkg.opportunity || {};
-          const scr = pkg.script || {};
+        const pkg = data.content_package || data;
+        if (pkg && (pkg.title || pkg.opportunity_topic || pkg.script)) {
+          const title = pkg.title || pkg.opportunity_topic || pkg.script?.title || 'Multi-Agent Autonomous Pipeline';
+          const score = pkg.quality_report?.editorial_scorecard?.overall_qa_score || pkg.opportunity?.overall_score || 96;
+          const reason = pkg.hook || pkg.opportunity?.reasoning || 'Identified by Railway n8n ViralFlow 2.0 Autonomous Scout';
+          
           const n8nTrend: Trend = {
             id: `n8n-scanned-${Date.now()}`,
-            title: opp.title || scr.title || 'Autonomous n8n Multi-Agent Workflow Engine',
-            topic: 'AI Automation',
-            source: opp.source || 'n8n Trend Scout Agent',
-            overall_score: opp.overall_score || 95,
-            momentum: 94,
-            fit: 92,
+            title: title,
+            topic: 'Autonomous Multi-Agent Systems',
+            source: 'Railway n8n Trend Scout',
+            overall_score: score,
+            momentum: 98,
+            fit: 94,
             novelty: 96,
-            saturation: 25,
-            reason: opp.reasoning || scr.hook || 'High-scoring opportunity identified by n8n Trend Scoring Agent.',
+            saturation: 20,
+            reason: reason,
             recommended: true,
-            views: 240000
+            views: 310000
           };
           setTrends(prev => [n8nTrend, ...prev]);
           setScanning(false);

@@ -105,6 +105,38 @@ export default function StrategyLabPage() {
   const handleRegenerateStrategy = async () => {
     setGenerating(true);
     try {
+      // 1. Try Railway n8n live production webhook
+      const n8nRes = await fetch('/api/n8n/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'discover',
+          target_duration: 30,
+          audience: 'Developers and tech founders'
+        }),
+        signal: AbortSignal.timeout(20000)
+      }).catch(() => null);
+
+      if (n8nRes && n8nRes.ok) {
+        const n8nData = await n8nRes.json();
+        const pkg = n8nData.content_package || n8nData;
+        if (pkg && (pkg.title || pkg.hook)) {
+          const score = pkg.quality_report?.editorial_scorecard?.overall_qa_score || 95;
+          const newIdea = {
+            id: `n8n-strategy-${Date.now()}`,
+            trendTitle: pkg.opportunity_topic || pkg.title || 'Multi-Agent Autonomous Systems',
+            angleTitle: pkg.title || 'Why Multi-Agent Systems Are Crushing Monolithic AI',
+            hookText: pkg.hook || 'Forget everything you thought you knew about AI in 2026.',
+            predictedScore: score,
+            reason: 'Generated live via Railway n8n Strategy & Production Engine.'
+          };
+          setIdeas(prev => [newIdea, ...prev]);
+          setGenerating(false);
+          return;
+        }
+      }
+
+      // 2. Fallback to Gemini
       const res = await fetch('/api/llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

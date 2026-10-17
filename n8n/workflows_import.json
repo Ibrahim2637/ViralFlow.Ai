@@ -1,151 +1,1247 @@
 {
-  "name": "ViralFlow AI Orchestration Suite",
-  "workflows": [
+  "nodes": [
     {
-      "name": "ViralFlow_TrendScanner",
-      "nodes": [
-        {
-          "parameters": {
-            "rule": "interval",
-            "interval": 30,
-            "unit": "minutes"
-          },
-          "id": "node-trigger-cron",
-          "name": "Schedule Trigger",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "typeVersion": 1,
-          "position": [250, 300]
-        },
-        {
-          "parameters": {
-            "url": "https://www.googleapis.com/youtube/v3/search",
-            "sendQuery": true,
-            "queryParameters": {
-              "parameters": [
-                { "name": "part", "value": "snippet" },
-                { "name": "q", "value": "AI coding agents, Next.js tutorial" },
-                { "name": "type", "value": "video" },
-                { "name": "maxResults", "value": "10" }
-              ]
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"niche\": \"Tech/AI for beginners in Pakistan\",\n  \"audience\": \"18-30, Pakistan, curious about AI but non-technical\",\n  \"tone\": \"Direct, energetic, practical\",\n  \"vocabulary\": \"Simple English + occasional Urdu phrases\",\n  \"hook_patterns\": [\n    \"Contrarian question\",\n    \"Surprising number\",\n    \"Mistake framing\"\n  ],\n  \"preferred_duration_seconds\": 45,\n  \"visual_style\": \"Talking head + B-roll + captions\",\n  \"topic_boundaries\": \"Avoid politics; avoid unsupported investment claims\",\n  \"successful_patterns\": \"Short explainers outperform generic motivation\",\n  \"brand_rules\": \"Logo bottom-right, bold yellow captions, fast-paced intro\"\n}",
+        "options": {}
+      },
+      "id": "vf-dna-01",
+      "name": "Creator DNA (Demo Profile)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2000,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
             },
-            "authentication": "predefined",
-            "nodeCredentialType": "googleApi"
-          },
-          "id": "node-yt-search",
-          "name": "YouTube Search API",
-          "type": "n8n-nodes-base.httpRequest",
-          "typeVersion": 4,
-          "position": [450, 300]
+            {
+              "name": "q",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "order",
+              "value": "viewCount"
+            },
+            {
+              "name": "publishedAfter",
+              "value": "={{ $now.minus({days: 14}).toISO() }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "15"
+            },
+            {
+              "name": "key",
+              "value": "PASTE_YOUR_YOUTUBE_API_KEY_HERE"
+            }
+          ]
         },
-        {
-          "parameters": {
-            "operation": "upsert",
-            "schema": "public",
-            "table": "trends",
-            "columns": "title, url, source, external_id"
-          },
-          "id": "node-supabase-upsert",
-          "name": "Supabase Save Trends",
-          "type": "n8n-nodes-base.supabase",
-          "typeVersion": 1,
-          "position": [680, 300]
+        "options": {
+          "timeout": 15000
         }
+      },
+      "id": "vf-yt-01",
+      "name": "YouTube: Search Trending Videos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1344,
+        -208
       ],
-      "connections": {
-        "Schedule Trigger": {
-          "main": [
-            [
-              {
-                "node": "YouTube Search API",
-                "type": "main",
-                "index": 0
-              }
-            ]
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst ids = items.map(i => i.id.videoId).filter(Boolean).join(',');\nreturn [{ json: { video_ids: ids, raw_search: items } }];"
+      },
+      "id": "vf-extractids-01",
+      "name": "Extract Video IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        -208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,statistics,contentDetails"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.video_ids }}"
+            },
+            {
+              "name": "key",
+              "value": "PASTE_YOUR_YOUTUBE_API_KEY_HERE"
+            }
           ]
         },
-        "YouTube Search API": {
-          "main": [
-            [
-              {
-                "node": "Supabase Save Trends",
-                "type": "main",
-                "index": 0
-              }
-            ]
-          ]
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "vf-ytstats-01",
+      "name": "YouTube: Get Video Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -864,
+        -208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst now = Date.now();\n\nconst candidates = items.map(v => {\n  const publishedAt = new Date(v.snippet.publishedAt).getTime();\n  const ageHours = Math.max(1, (now - publishedAt) / (1000 * 60 * 60));\n  const views = parseInt(v.statistics.viewCount || '0', 10);\n  const likes = parseInt(v.statistics.likeCount || '0', 10);\n  const comments = parseInt(v.statistics.commentCount || '0', 10);\n  return {\n    video_id: v.id,\n    title: v.snippet.title,\n    channel: v.snippet.channelTitle,\n    description: (v.snippet.description || '').slice(0, 300),\n    published_at: v.snippet.publishedAt,\n    age_hours: Math.round(ageHours),\n    views: views,\n    likes: likes,\n    comments: comments,\n    views_per_hour: Math.round(views / ageHours),\n    engagement_rate: views > 0 ? +(((likes + comments) / views) * 100).toFixed(2) : 0,\n    url: 'https://www.youtube.com/watch?v=' + v.id\n  };\n});\n\nreturn [{ json: { candidates } }];"
+      },
+      "id": "vf-normalize-01",
+      "name": "Normalize Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        -208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst youtubeCandidates = (safeGet('Normalize Candidates') || { candidates: [] }).candidates || [];\nconst tavilyCandidates = (safeGet('Normalize Tavily Candidates') || { candidates: [] }).candidates || [];\nconst dna = safeGet('Creator DNA (Demo Profile)') || {};\n\nreturn [{\n  json: {\n    creator_dna: dna,\n    candidates: [...youtubeCandidates, ...tavilyCandidates]\n  }\n}];"
+      },
+      "id": "vf-prep-01",
+      "name": "Prepare Scoring Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "id": "vf-chatmodel-01",
+      "name": "OpenRouter Model (Shared)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        320
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "T3fDCtfSCxHOmkja",
+          "name": "OpenRouter account"
         }
       }
     },
     {
-      "name": "ViralFlow_VideoRenderTrigger",
-      "nodes": [
-        {
-          "parameters": {
-            "httpMethod": "POST",
-            "path": "content/generate",
-            "responseMode": "onReceived"
-          },
-          "id": "node-webhook-trigger",
-          "name": "Webhook Trigger",
-          "type": "n8n-nodes-base.webhook",
-          "typeVersion": 1,
-          "position": [200, 400]
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ creator_dna: $json.creator_dna, candidates: $json.candidates }) }}",
+        "options": {
+          "systemMessage": "You are the Trend Scout & Trend Analyst for ViralFlow AI. You receive a list of candidate topics from TWO possible sources and a Creator DNA profile:\n- YouTube candidates have real metrics: views, likes, comments, views_per_hour, engagement_rate.\n- Tavily (web/news search) candidates have NO view/engagement metrics (they are null) but DO have search_relevance_score (how well it matched the query) and source_rank (lower = more relevant), plus a 'source' field ('tavily' or implicit YouTube if video_id is present).\n\nScore EACH candidate for how good an opportunity it is for THIS specific creator, using this weighted formula as your reasoning guide: Opportunity = 0.25*Momentum + 0.20*AudienceFit + 0.15*Novelty + 0.15*EngagementQuality + 0.15*Timing + 0.10*ProductionFeasibility.\n\nFor YouTube candidates: Momentum uses views_per_hour (time-normalized, not raw views). EngagementQuality uses engagement_rate. Timing uses age_hours (fresher = higher).\nFor Tavily candidates (no metrics available): treat Momentum and EngagementQuality as UNKNOWN - do not guess a fake number, instead derive an estimated score from search_relevance_score and source_rank (higher relevance/lower rank = more likely to be a live trend), and say so in your reasoning. Timing should assume moderate freshness unless published_at is given.\nAudienceFit, Novelty and ProductionFeasibility are judged the same way regardless of source: how well the topic matches the creator's niche/audience/topic_boundaries, whether there is room for a different angle, and whether it is realistic to produce as a 30-60s vertical video.\n\nRespond with ONLY valid JSON (no markdown fences, no extra text) in this exact shape: {\"scored_candidates\": [{\"video_id\": string|null, \"title\": string, \"source\": \"youtube\"|\"tavily\", \"momentum\": number 0-100, \"audience_fit\": number 0-100, \"novelty\": number 0-100, \"engagement_quality\": number 0-100, \"timing\": number 0-100, \"production_feasibility\": number 0-100, \"overall_score\": number 0-100, \"reasoning\": string}]}. Sort scored_candidates by overall_score descending."
+        }
+      },
+      "id": "vf-scoreagent-01",
+      "name": "Trend Scoring Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst agentOut = $input.first().json;\nconst dna = safeGet('Prepare Scoring Input')?.creator_dna || {};\nlet parsed = { scored_candidates: [] };\ntry {\n  const raw = agentOut.output || agentOut.text || '';\n  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  parsed._parse_error = e.message;\n}\nconst sorted = (parsed.scored_candidates || []).sort((a,b) => (b.overall_score||0) - (a.overall_score||0));\nconst top = sorted[0] || null;\n\nreturn [{\n  json: {\n    creator_dna: dna,\n    top_opportunity: top,\n    all_scored: sorted\n  }\n}];"
+      },
+      "id": "vf-parsescores-01",
+      "name": "Pick Top Opportunity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ creator_dna: $json.creator_dna, opportunity: $json.top_opportunity }) }}",
+        "options": {
+          "systemMessage": "You are the Strategy Agent for ViralFlow AI. You receive a Creator DNA profile and the highest-scoring trend opportunity (with its reasoning). Decide on ONE original content angle for this creator - not a copy of the source video, but a fresh take that fits this creator's tone, audience and topic boundaries. Pick a hook pattern from the creator's proven hook_patterns when it fits.\\n\\nRespond with ONLY valid JSON (no markdown, no extra text): {\\\"chosen_angle\\\": string, \\\"hook_pattern_used\\\": string, \\\"format\\\": string, \\\"why_this_works_for_this_creator\\\": string, \\\"target_duration_seconds\\\": number}."
+        }
+      },
+      "id": "vf-strategyagent-01",
+      "name": "Strategy Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst agentOut = $input.first().json;\nconst prior = safeGet('Pick Top Opportunity') || safeGet('Build Direct Opportunity') || {};\nlet parsed = {};\ntry {\n  const raw = agentOut.output || agentOut.text || '';\n  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) { parsed._parse_error = e.message; }\n\nreturn [{ json: { creator_dna: prior.creator_dna, opportunity: prior.top_opportunity, strategy: parsed } }];"
+      },
+      "id": "vf-parsestrategy-01",
+      "name": "Parse Strategy Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ creator_dna: $json.creator_dna, opportunity: $json.opportunity, strategy: $json.strategy }) }}",
+        "options": {
+          "systemMessage": "You are the Script Agent for ViralFlow AI. You write a complete, original short-form video script based on the creator's DNA, the chosen trend opportunity, and the strategy angle already decided. Never copy another creator's exact phrasing or structure - use the source topic and public facts only, then create fresh wording. Output scene-by-scene timing that fits within the target duration.\\n\\nRespond with ONLY valid JSON matching EXACTLY this schema (no markdown, no extra text): {\\\"title\\\": string, \\\"hook\\\": string, \\\"duration_seconds\\\": number, \\\"audience\\\": string, \\\"angle\\\": string, \\\"claims\\\": [{\\\"text\\\": string, \\\"needs_source\\\": boolean}], \\\"scenes\\\": [{\\\"start\\\": number, \\\"end\\\": number, \\\"voiceover\\\": string, \\\"visual_type\\\": \\\"avatar\\\"|\\\"stock\\\"|\\\"text\\\", \\\"caption\\\": string, \\\"search\\\": string}], \\\"caption\\\": string, \\\"hashtags\\\": [string], \\\"risk_flags\\\": [string]}. The 'search' field on stock-visual scenes should be a short keyword phrase suitable for a stock video search API."
+        }
+      },
+      "id": "vf-scriptagent-01",
+      "name": "Script Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst agentOut = $input.first().json;\nlet parsed = {};\ntry {\n  const raw = agentOut.output || agentOut.text || '';\n  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) { parsed._parse_error = e.message; }\nreturn [{ json: { script: parsed } }];"
+      },
+      "id": "vf-parsescript-01",
+      "name": "Parse Script Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ claims: $json.script.claims || [], title: $json.script.title }) }}",
+        "options": {
+          "systemMessage": "You are the Fact/Quality Agent for ViralFlow AI. You receive a script with a 'claims' array. For EACH claim, classify it as one of: opinion, common_knowledge, time_sensitive, numerical, high_risk. For time_sensitive, numerical, or high_risk claims, note that a source should be found (you do not have live web search here, so mark support_level as 'needs_verification' and explain what kind of source would verify it). Never invent fake URLs. Flag any claim that sounds unsupported or risky to publish without a real source.\\n\\nRespond with ONLY valid JSON (no markdown, no extra text): {\\\"fact_check\\\": [{\\\"claim\\\": string, \\\"classification\\\": string, \\\"support_level\\\": \\\"supported\\\"|\\\"needs_verification\\\"|\\\"unsupported\\\", \\\"note\\\": string}], \\\"safe_to_publish\\\": boolean, \\\"blocking_reasons\\\": [string]}."
+        }
+      },
+      "id": "vf-factcheck-01",
+      "name": "Fact-Check Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst agentOut = $input.first().json;\nconst scriptData = safeGet('Parse Script Output') || {};\nlet parsed = { safe_to_publish: false, fact_check: [], blocking_reasons: ['Fact-check parse failed'] };\ntry {\n  const raw = agentOut.output || agentOut.text || '';\n  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch (e) { parsed._parse_error = e.message; }\n\nconst script = scriptData.script || {};\nconst stockScenes = (script.scenes || []).filter(s => s.visual_type === 'stock' && s.search);\nconst primarySearch = stockScenes.length > 0 ? stockScenes[0].search : (script.title || 'technology');\n\nreturn [{ json: { script, fact_check_result: parsed, pexels_query: primarySearch, stock_scene_count: stockScenes.length } }];"
+      },
+      "id": "vf-parsefactcheck-01",
+      "name": "Parse Fact-Check Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.pexels_query }}"
+            },
+            {
+              "name": "per_page",
+              "value": "10"
+            },
+            {
+              "name": "orientation",
+              "value": "portrait"
+            }
+          ]
         },
-        {
-          "parameters": {
-            "model": "google/gemini-1.5-pro",
-            "prompt": "=Write a 45-second script about: {{ $json[\"body\"][\"trend_title\"] }} based on Creator DNA: {{ $json[\"body\"][\"dna\"] }}. Return only JSON format."
-          },
-          "id": "node-llm-script",
-          "name": "Script Agent LLM",
-          "type": "n8n-nodes-base.openRouter",
-          "typeVersion": 1,
-          "position": [420, 400]
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "BctPozjKxBgacg6eaDYQQp4JoebBuQJA0MvtG0Db3SFa5wT4PynOYd7X"
+            }
+          ]
         },
-        {
-          "parameters": {
-            "method": "POST",
-            "url": "http://localhost:5000/render",
-            "sendBody": true,
-            "bodyParameters": {
-              "parameters": [
-                { "name": "content_id", "value": "={{ $json[\"content_id\"] }}" },
-                { "name": "scenes", "value": "={{ $json[\"scenes\"] }}" },
-                { "name": "audio_url", "value": "={{ $json[\"audio_url\"] }}" }
-              ]
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "vf-pexels-01",
+      "name": "Pexels: Search B-roll",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1856,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst pexelsData = $input.first().json;\nconst prior = safeGet('Parse Fact-Check Output') || {};\nconst scores = safeGet('Pick Top Opportunity') || safeGet('Build Direct Opportunity') || {};\n\nconst script = prior.script || {};\nconst factCheck = prior.fact_check_result || {};\nconst broll = (pexelsData.videos || []).map(v => ({\n  id: v.id,\n  preview_image: v.image,\n  duration_seconds: v.duration,\n  video_url: (v.video_files && v.video_files[0]) ? v.video_files[0].link : null,\n  pexels_url: v.url\n}));\n\nreturn [{\n  json: {\n    content_package: {\n      generated_at: new Date().toISOString(),\n      creator_dna: scores.creator_dna || null,\n      opportunity: scores.top_opportunity || null,\n      script: script,\n      fact_check: factCheck,\n      broll_assets: broll,\n      ready_to_render: !!(factCheck.safe_to_publish && script.title),\n      status: factCheck.safe_to_publish ? 'approved_for_production' : 'blocked_pending_review'\n    }\n  }\n}];"
+      },
+      "id": "vf-assemble-01",
+      "name": "Assemble Content Package",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ api_key: 'PASTE_YOUR_TAVILY_API_KEY_HERE', query: $json.search_query + ' trending 2026', max_results: 10, search_depth: 'basic', topic: 'news', days: 14 }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "vf-tavily-01",
+      "name": "Tavily: Search Trending Topics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1344,
+        112
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = ($input.first().json.results) || [];\n\nconst candidates = results.map((r, idx) => ({\n  video_id: null,\n  title: r.title,\n  channel: (r.url || '').replace(/^https?:\\/\\//, '').split('/')[0],\n  description: (r.content || '').slice(0, 300),\n  published_at: r.published_date || null,\n  age_hours: null,\n  views: null,\n  likes: null,\n  comments: null,\n  views_per_hour: null,\n  engagement_rate: null,\n  search_relevance_score: r.score || null,\n  source_rank: idx + 1,\n  url: r.url,\n  source: 'tavily'\n}));\n\nreturn [{ json: { candidates } }];"
+      },
+      "id": "vf-normtavily-01",
+      "name": "Normalize Tavily Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        112
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "viralflow-generate",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "vf-webhook-01",
+      "name": "Generate Content Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2016,
+        48
+      ],
+      "webhookId": "69ac4b9d-6c43-4ea5-99d4-052371b8613e"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "vf-respond-01",
+      "name": "Respond With Content Package",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2368,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { search_query: $json.search_query } }];"
+      },
+      "id": "vf-query-02",
+      "name": "Set Search Topic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ ($json.body && $json.body.message) ? $json.body.message : (($json.body && $json.body.topic) ? 'Make a video about: ' + $json.body.topic : 'Find trending topics') }}",
+        "options": {
+          "systemMessage": "You interpret a creator's request to ViralFlow AI. The creator will type either: (a) a request to discover/search trending topics, optionally with a niche/keyword hint, or (b) a specific topic they already want a video made about. Decide which mode applies.\n\nRespond with ONLY valid JSON (no markdown, no extra text): {\"mode\": \"discover\"|\"direct\", \"search_query\": string, \"direct_topic\": string|null}. If mode is 'discover', put a good search keyword phrase in search_query (use their hint if given, otherwise a sensible default for a tech/AI creator). If mode is 'direct', put the exact topic/idea they want in direct_topic and leave search_query as your best guess of the same topic as a fallback."
+        }
+      },
+      "id": "vf-router-01",
+      "name": "Interpret Request",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -2208,
+        -304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "direct",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "vf-if-01",
+      "name": "Discover or Direct?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1648,
+        -448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst dna = safeGet('Creator DNA (Demo Profile)') || {};\nconst intent = $input.first().json;\n\nreturn [{\n  json: {\n    creator_dna: dna,\n    top_opportunity: {\n      video_id: null,\n      title: intent.direct_topic,\n      source: 'creator_direct_request',\n      momentum: null,\n      audience_fit: null,\n      novelty: null,\n      engagement_quality: null,\n      timing: null,\n      production_feasibility: null,\n      overall_score: 100,\n      reasoning: 'Directly requested by the creator - no discovery/scoring needed, this topic is pre-approved.'\n    },\n    all_scored: []\n  }\n}];"
+      },
+      "id": "vf-builddirect-01",
+      "name": "Build Direct Opportunity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        -464
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pkg = $input.first().json.content_package;\nconst scenes = (pkg.script && pkg.script.scenes) || [];\nconst voiceoverText = scenes.map(s => s.voiceover).filter(Boolean).join(' ... ');\nreturn [{ json: { content_package: pkg, voiceover_text: voiceoverText || (pkg.script && pkg.script.hook) || 'No script available.' } }];"
+      },
+      "id": "86b466c9-d717-4118-8e2b-2f60c7b32aca",
+      "name": "Build Voiceover Script",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.elevenlabs.io/v1/text-to-speech/' + $('API Keys Config').first().json.elevenlabs_voice_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "={{ $('API Keys Config').first().json.elevenlabs_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.voiceover_text, model_id: 'eleven_multilingual_v2' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
             }
           },
-          "id": "node-render-worker-call",
-          "name": "Trigger Render Worker",
-          "type": "n8n-nodes-base.httpRequest",
-          "typeVersion": 4,
-          "position": [650, 400]
+          "timeout": 30000
         }
+      },
+      "id": "321cfb70-1871-429a-aef5-3eb1ea3789af",
+      "name": "ElevenLabs: Generate Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2368,
+        224
       ],
-      "connections": {
-        "Webhook Trigger": {
-          "main": [
-            [
-              {
-                "node": "Script Agent LLM",
-                "type": "main",
-                "index": 0
-              }
-            ]
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/ingest/stage/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('API Keys Config').first().json.shotstack_api_key }}"
+            }
           ]
         },
-        "Script Agent LLM": {
-          "main": [
-            [
-              {
-                "node": "Trigger Render Worker",
-                "type": "main",
-                "index": 0
-              }
-            ]
-          ]
+        "options": {
+          "timeout": 15000
         }
-      }
+      },
+      "id": "867acc71-3384-4127-808b-3ea092826dbb",
+      "name": "Shotstack: Request Upload URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2624,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst pkg = item.content_package;\nconst audioUrl = item.audio_url;\nconst scenes = (pkg.script && pkg.script.scenes) || [];\nconst broll = pkg.broll_assets || [];\n\nconst videoClips = scenes.map((scene, i) => {\n  const asset = broll.length ? broll[i % broll.length] : null;\n  return { asset: { type: 'video', src: asset ? asset.video_url : null, volume: 0 }, start: scene.start, length: Math.max(1, scene.end - scene.start), fit: 'cover' };\n}).filter(c => c.asset.src);\n\nconst captionClips = scenes.map(scene => ({\n  asset: { type: 'title', text: scene.caption || '', style: 'minimal', size: 'small', position: 'bottom' },\n  start: scene.start, length: Math.max(1, scene.end - scene.start)\n}));\n\nconst timeline = { background: '#000000', tracks: [ { clips: captionClips }, { clips: videoClips } ] };\nif (audioUrl) { timeline.soundtrack = { src: audioUrl, effect: 'fadeOut' }; }\n\nreturn [{ json: { content_package: pkg, shotstack_timeline: timeline } }];"
+      },
+      "id": "9dd48e5b-db4c-4998-87c5-6c2d0ffa2039",
+      "name": "Build Shotstack Timeline",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst renderId = (item.response && item.response.id) || item.id;\nconst apiKey = $('API Keys Config').first().json.shotstack_api_key;\nlet videoUrl = null; let finalStatus = 'unknown'; let lastRaw = null;\nif (renderId) {\n  for (let i = 0; i < 20; i++) {\n    const res = await this.helpers.httpRequest({ method: 'GET', url: 'https://api.shotstack.io/edit/stage/render/' + renderId, headers: { 'x-api-key': apiKey }, json: true });\n    lastRaw = res;\n    const status = res && res.response && res.response.status;\n    finalStatus = status;\n    if (status === 'done') { videoUrl = res.response.url; break; }\n    if (status === 'failed') break;\n    await new Promise(r => setTimeout(r, 5000));\n  }\n}\nreturn [{ json: { final_video_url: videoUrl, render_status: finalStatus, _debug_render_raw: lastRaw } }];"
+      },
+      "id": "4871eb9d-eba3-478e-86c0-eb3abc8d5603",
+      "name": "Shotstack: Poll Render Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const polled = $input.first().json;\nconst pkg = $('Build Shotstack Timeline').first().json.content_package;\npkg.final_video_url = polled.final_video_url || null;\npkg.render_status = polled.render_status || 'unknown';\nreturn [{ json: { content_package: pkg } }];"
+      },
+      "id": "e5932b30-4fbf-47c7-8011-5c71110ddda0",
+      "name": "Attach Final Video",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4416,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const audioItem = $('ElevenLabs: Generate Voiceover').first();\nconst uploadInfo = $input.first().json;\nconst pkg = $('Build Voiceover Script').first().json.content_package;\nconst audioOk = !!(audioItem && audioItem.binary && audioItem.binary.data);\nif (!audioOk) {\n  return [{ json: { content_package: pkg, upload: uploadInfo, audio_failed: true, audio_error: audioItem && audioItem.json && audioItem.json.error ? audioItem.json.error.message : 'ElevenLabs did not return audio' } }];\n}\nreturn [{ json: { content_package: pkg, upload: uploadInfo, audio_failed: false }, binary: { data: audioItem.binary.data } }];"
+      },
+      "id": "6040a35d-d39f-46ba-ba04-8e4b7ec50eea",
+      "name": "Merge Audio + Upload URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeGet(nodeName) { try { const item = $(nodeName).first(); return item ? item.json : null; } catch (e) { return null; } }\nconst webhookBody = (safeGet('Generate Content Webhook') || {}).body || {};\nif (webhookBody.topic && String(webhookBody.topic).trim()) {\n  return [{ json: { mode: 'direct', search_query: String(webhookBody.topic).trim(), direct_topic: String(webhookBody.topic).trim() } }];\n}\n\nlet parsed = { mode: 'discover', search_query: 'AI tools for beginners', direct_topic: null };\ntry {\n  const agentOut = $input.first().json;\n  const raw = agentOut.output || agentOut.text || '';\n  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  const p = JSON.parse(cleaned);\n  parsed = { mode: p.mode === 'direct' ? 'direct' : 'discover', search_query: p.search_query || parsed.search_query, direct_topic: p.direct_topic || null };\n} catch (e) { parsed._parse_error = e.message; }\nreturn [{ json: parsed }];"
+      },
+      "id": "ce923b2a-29d0-45f0-94d2-76b40cec09e7",
+      "name": "Parse Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/edit/stage/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('API Keys Config').first().json.shotstack_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ timeline: $json.shotstack_timeline, output: { format: 'mp4', size: { width: 1080, height: 1920 } } }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "24635385-cf13-4ca5-a026-1c108227204d",
+      "name": "Shotstack: Render Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3904,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"elevenlabs_api_key\": \"PASTE_YOUR_ELEVENLABS_API_KEY_HERE\",\n  \"elevenlabs_voice_id\": \"S70eucLM8pIOEv1fB0IE\",\n  \"shotstack_api_key\": \"PASTE_YOUR_SHOTSTACK_API_KEY_HERE\"\n}",
+        "options": {}
+      },
+      "id": "92335b71-61bb-49b6-8cdd-aed08fd89ecd",
+      "name": "API Keys Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1744,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (item.json.audio_failed) {\n  return [{ json: { content_package: item.json.content_package, shotstack_source_id: null, upload_error: item.json.audio_error } }];\n}\nconst uploadUrl = (item.json.upload && item.json.upload.data && item.json.upload.data.attributes && item.json.upload.data.attributes.url) || (item.json.upload && item.json.upload.url);\nconst sourceId = (item.json.upload && item.json.upload.data && item.json.upload.data.id) || (item.json.upload && item.json.upload.id);\nlet uploadError = null;\nif (uploadUrl) {\n  try {\n    const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\n    const putRes = await fetch(uploadUrl, { method: 'PUT', body: binaryData });\n    if (!putRes.ok) { uploadError = 'PUT failed with status ' + putRes.status; }\n  } catch (e) { uploadError = e.message; }\n} else {\n  uploadError = 'no upload url found, raw upload response: ' + JSON.stringify(item.json.upload);\n}\nreturn [{ json: { content_package: item.json.content_package, shotstack_source_id: uploadError ? null : sourceId, upload_error: uploadError } }];"
+      },
+      "id": "061f5e76-64e2-48ba-8fb5-d514f87d77a8",
+      "name": "Shotstack: Upload Audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst sourceId = item.shotstack_source_id;\nconst apiKey = $('API Keys Config').first().json.shotstack_api_key;\nlet audioUrl = null; let lastRaw = null; let finalStatus = 'unknown';\nif (sourceId) {\n  for (let i = 0; i < 10; i++) {\n    const res = await this.helpers.httpRequest({ method: 'GET', url: 'https://api.shotstack.io/ingest/stage/sources/' + sourceId, headers: { 'x-api-key': apiKey }, json: true });\n    lastRaw = res;\n    const attrs = res && res.data && res.data.attributes;\n    const status = attrs && attrs.status;\n    finalStatus = status;\n    if (status === 'ready' || status === 'done') {\n      audioUrl = (attrs.outputs && attrs.outputs[0] && attrs.outputs[0].url) || attrs.source || attrs.url || null;\n      break;\n    }\n    if (status === 'failed') break;\n    await new Promise(r => setTimeout(r, 3000));\n  }\n}\nreturn [{ json: { content_package: item.content_package, audio_url: audioUrl, ingest_status: finalStatus, _debug_ingest_raw: lastRaw } }];"
+      },
+      "id": "6014f38a-453c-435c-a6cc-52c1cbf9e6f7",
+      "name": "Shotstack: Poll Ingest Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3392,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "formTitle": "ViralFlow AI — Generate a Video",
+        "formDescription": "Enter a topic and the pipeline will write a script, generate voiceover, and render a finished video.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "placeholder": "e.g. 5 AI tools every developer should know",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "60d768de-0838-4d6d-afda-d594b78d9d71",
+      "name": "Generate Video Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -2624,
+        -224
+      ],
+      "webhookId": "f5aec38e-adad-408c-bf86-8678be1a7bb4"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { body: { topic: $json['Topic'] || $json.Topic || '' } } }];"
+      },
+      "id": "27bdb4df-8a31-4c66-ba76-12292ff249d8",
+      "name": "Normalize Form Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1OkovLAJdGlmx-5rsreKIvldctWugPsLBmFiS5xYX6R0"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkovLAJdGlmx-5rsreKIvldctWugPsLBmFiS5xYX6R0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "name": "Log Video to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4672,
+        432
+      ],
+      "id": "fcfc5a23-7b65-4d95-9e68-6acc4f6013f6",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2ZzDWbeUQaqPMFTv",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
-  ]
+  ],
+  "connections": {
+    "Creator DNA (Demo Profile)": {
+      "main": [
+        [
+          {
+            "node": "API Keys Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube: Search Trending Videos": {
+      "main": [
+        [
+          {
+            "node": "Extract Video IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Video IDs": {
+      "main": [
+        [
+          {
+            "node": "YouTube: Get Video Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube: Get Video Stats": {
+      "main": [
+        [
+          {
+            "node": "Normalize Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Candidates": {
+      "main": [
+        [
+          {
+            "node": "Prepare Scoring Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Scoring Input": {
+      "main": [
+        [
+          {
+            "node": "Trend Scoring Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Model (Shared)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Trend Scoring Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Strategy Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Script Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Fact-Check Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Interpret Request",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trend Scoring Agent": {
+      "main": [
+        [
+          {
+            "node": "Pick Top Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Top Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Strategy Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Strategy Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Strategy Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Strategy Output": {
+      "main": [
+        [
+          {
+            "node": "Script Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Script Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Script Output": {
+      "main": [
+        [
+          {
+            "node": "Fact-Check Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fact-Check Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Fact-Check Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fact-Check Output": {
+      "main": [
+        [
+          {
+            "node": "Pexels: Search B-roll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pexels: Search B-roll": {
+      "main": [
+        [
+          {
+            "node": "Assemble Content Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Content Package": {
+      "main": [
+        [
+          {
+            "node": "Build Voiceover Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily: Search Trending Topics": {
+      "main": [
+        [
+          {
+            "node": "Normalize Tavily Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Content Webhook": {
+      "main": [
+        [
+          {
+            "node": "Creator DNA (Demo Profile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Search Topic": {
+      "main": [
+        [
+          {
+            "node": "YouTube: Search Trending Videos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tavily: Search Trending Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpret Request": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discover or Direct?": {
+      "main": [
+        [
+          {
+            "node": "Build Direct Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Search Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Direct Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Strategy Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Voiceover Script": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs: Generate Voiceover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs: Generate Voiceover": {
+      "main": [
+        [
+          {
+            "node": "Shotstack: Request Upload URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shotstack: Request Upload URL": {
+      "main": [
+        [
+          {
+            "node": "Merge Audio + Upload URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Shotstack Timeline": {
+      "main": [
+        [
+          {
+            "node": "Shotstack: Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shotstack: Poll Render Status": {
+      "main": [
+        [
+          {
+            "node": "Attach Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Final Video": {
+      "main": [
+        [
+          {
+            "node": "Respond With Content Package",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Video to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Audio + Upload URL": {
+      "main": [
+        [
+          {
+            "node": "Shotstack: Upload Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent": {
+      "main": [
+        [
+          {
+            "node": "Discover or Direct?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shotstack: Render Video": {
+      "main": [
+        [
+          {
+            "node": "Shotstack: Poll Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Keys Config": {
+      "main": [
+        [
+          {
+            "node": "Interpret Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shotstack: Upload Audio": {
+      "main": [
+        [
+          {
+            "node": "Shotstack: Poll Ingest Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shotstack: Poll Ingest Status": {
+      "main": [
+        [
+          {
+            "node": "Build Shotstack Timeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Form Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Form Input": {
+      "main": [
+        [
+          {
+            "node": "Creator DNA (Demo Profile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "891604c261c14731de2cd9206b1eb6bd43bf33f2ef0039b820e5b21bb8065269"
+  }
 }
